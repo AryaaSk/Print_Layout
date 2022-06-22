@@ -3,6 +3,8 @@ body {
     display: grid;
     place-content: center;
     overflow: hidden;
+
+    --taskbarBorderRadius: 10px;
 }
 
 
@@ -17,23 +19,26 @@ body {
 }
 
 
-/* WILL DEAL WITH TASKBAR LATER, MAY NOT EVEN NEED IT */
-/*
 #taskbar {
+    position: fixed;
+    margin: 0 auto;
+    bottom: 50px;
     height: 85px;
-    width: 581px;
+    width: 400px;
 
     display: grid;
-    grid-template-columns: 60% 20% 20%;
+    grid-template-columns: 33% 34% 33%;
     grid-template-rows: 100%;
     place-items: center;
 
     background-color: #000000;
-    border-radius: 10px;
+    border-radius: var(--taskbarBorderRadius);
     z-index: 1;
     transform: translate3d(0, 0, 0);
 }
 
+/* DONT NEED ZOOM SLIDER, USER CAN JUST USE MOUSE WHEEL */
+/*
 #zoomSlider {
     -webkit-appearance: none;
 
@@ -54,6 +59,7 @@ body {
     border-radius: 50%;
     background-color: #ffffff;
 }
+*/
 
 .taskbarButton {
     height: 100%;
@@ -66,4 +72,7 @@ body {
     background-color: #888888;
     transition: 500ms background-color;
 }
-*/
+.taskBarButtonImage {
+    max-height: 45%;
+    max-width: 45%;
+}
