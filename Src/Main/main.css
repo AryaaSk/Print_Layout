@@ -1,0 +1,69 @@
+body {
+    background-color: #011F34;
+    display: grid;
+    place-content: center;
+    overflow: hidden;
+}
+
+
+
+#paper {
+    /* Size and position set dynamically in JS (different paper sizes), for now will just make A4 */
+    position: relative;
+    left: 0;
+    top: 0;
+
+    background-color: white;
+}
+
+
+/* WILL DEAL WITH TASKBAR LATER, MAY NOT EVEN NEED IT */
+/*
+#taskbar {
+    height: 85px;
+    width: 581px;
+
+    display: grid;
+    grid-template-columns: 60% 20% 20%;
+    grid-template-rows: 100%;
+    place-items: center;
+
+    background-color: #000000;
+    border-radius: 10px;
+    z-index: 1;
+    transform: translate3d(0, 0, 0);
+}
+
+#zoomSlider {
+    -webkit-appearance: none;
+
+    height: 5px;
+    width: 75%;
+
+    background: #eeeeee;
+    background-color: #eeeeee;
+    border: none;
+    outline: none;
+}
+#zoomSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+
+    height: 29px;
+    width: 29px;
+
+    border-radius: 50%;
+    background-color: #ffffff;
+}
+
+.taskbarButton {
+    height: 100%;
+    width: 100%;
+
+    border: none;
+    background-color: transparent;
+}
+.taskbarButton:hover{
+    background-color: #888888;
+    transition: 500ms background-color;
+}
+*/
