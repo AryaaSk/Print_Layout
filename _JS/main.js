@@ -3,7 +3,12 @@ let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
 let MM_PX_SF = 3; //1mm = 3px
 const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
-const IMAGES = [{ src: "/Assets/test.png", left: 0, top: 0 }]; /* Left and top are relative to paper */
+const IMAGES = [];
+const ApplyPaperDPI = (paper) => {
+    const dpi = window.devicePixelRatio;
+    paper.setAttribute('height', String(PAPER_HEIGHT_MM * MM_PX_SF * dpi));
+    paper.setAttribute('width', String(PAPER_WIDTH_MM * MM_PX_SF * dpi));
+};
 const SizePaper = (paper) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF}px`;
@@ -12,7 +17,7 @@ const PositionPaper = (paper) => {
     paper.style.left = `${PAPER_POSITION.left}px`;
     paper.style.top = `${PAPER_POSITION.top}px`;
 };
-const CheckIntersection = (x, y, element) => {
+const CheckIntersectionElement = (x, y, element) => {
     const boundingBox = element.getBoundingClientRect();
     if (x > boundingBox.left && x < boundingBox.right && y > boundingBox.top && y < boundingBox.bottom) { //for some reason top and bottom are inverted
         return true;
@@ -24,13 +29,8 @@ const InitMovementListeners = (body, paper, taskbar) => {
     let [prevX, prevY] = [0, 0];
     body.onpointerdown = ($e) => {
         const [x, y] = [$e.clientX, $e.clientY]; //check if pointer is above taskbar or any images, if so then doesn't count
-        if (CheckIntersection(x, y, taskbar) == true) {
+        if (CheckIntersectionElement(x, y, taskbar) == true) {
             return;
-        }
-        for (let i = 0; i != IMAGES.length; i += 1) {
-            if (CheckIntersection(x, y, document.getElementById(String(i))) == true) {
-                return;
-            }
         }
         pointerDown = true;
         [prevX, prevY] = [$e.clientX, $e.clientY];
@@ -56,7 +56,7 @@ const InitMovementListeners = (body, paper, taskbar) => {
         SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
     };
 };
-const InitTaskbarListeners = (imagesContainer, file) => {
+const InitTaskbarListeners = (canvas, file) => {
     const fileInput = document.getElementById("hiddenFile");
     file.onclick = () => {
         fileInput.click();
@@ -66,47 +66,45 @@ const InitTaskbarListeners = (imagesContainer, file) => {
         fReader.readAsDataURL(fileInput.files[0]);
         fReader.onloadend = ($e) => {
             const src = $e.target.result;
-            IMAGES.push(NewImageObject(src));
-            UpdateImages(imagesContainer);
-            /*
-            img.onload = () => {
-                const [height, width] = [img.naturalHeight, img.naturalWidth];
-                const heightScaleFactor = 500 / height;
-                const widthScaleFactor = 500 / width;
-                const scaleFactor = (heightScaleFactor > widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-                console.log(height, width);
-
-                canvas.drawImage(img, 10, 10, 480, 270);
-            }
-            */
+            const image = new Image();
+            image.src = src;
+            image.onload = () => {
+                IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
+                UpdateImages(canvas);
+            };
         };
     };
 };
-const NewImageObject = (src) => {
-    return { src: src, left: 0, top: 0 };
+const NewImageObject = (src, height, width) => {
+    const heightScaleFactor = (100 * MM_PX_SF) / height;
+    const widthScaleFactor = (100 * MM_PX_SF) / width;
+    const scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
+    return { src: src, leftMM: 10, topMM: 10, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF };
 };
-const UpdateImages = (container) => {
-    container.innerHTML = "";
-    let counter = 0;
+const UpdateImages = (canvas) => {
+    const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF, PAPER_WIDTH_MM * MM_PX_SF];
+    canvas.clearRect(0, 0, canvasWidth, canvasHeight);
     for (const imageObject of IMAGES) {
-        const image = document.createElement('img');
-        image.id = String(counter);
-        image.className = "paperImage";
-        image.src = imageObject.src;
-        image.style.left = `${PAPER_POSITION.left + imageObject.left}px`;
-        image.style.top = `${PAPER_POSITION.left + imageObject.top}px`;
-        container.append(image);
-        counter += 1;
+        console.log(imageObject);
+        const img = new Image();
+        img.src = imageObject.src;
+        img.onload = () => {
+            const [imageX, imageY] = [imageObject.leftMM * MM_PX_SF, imageObject.topMM * MM_PX_SF];
+            const [imageHeight, imageWidth] = [imageObject.heightMM * MM_PX_SF, imageObject.widthMM * MM_PX_SF]; //these are the dimensions in px
+            //we also need to change the size of the image depending on the size of the paper, which is a bit confusing
+            //the constant is the imageObject.height/width, the only thing that is changing is the MM_PX_SF
+            canvas.drawImage(img, imageX, imageY, imageWidth, imageHeight);
+        };
     }
 };
 const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper"), document.getElementById("taskbar")];
     const [file, extras, print] = [document.getElementById("addImage"), document.getElementById("extrasButton"), document.getElementById("printButton")];
-    const [imagesContainer] = [document.getElementById("images")];
+    const canvas = paper.getContext('2d');
     SizePaper(paper);
+    ApplyPaperDPI(paper);
     PositionPaper(paper);
     InitMovementListeners(body, paper, taskbar);
-    InitTaskbarListeners(imagesContainer, file);
-    UpdateImages(imagesContainer);
+    InitTaskbarListeners(canvas, file);
 };
 Main();
