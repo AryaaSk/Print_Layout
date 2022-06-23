@@ -113,7 +113,6 @@ const NewImageObject = (src, height, width) => {
 const UpdateImages = (canvas) => {
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
     canvas.clearRect(0, 0, canvasWidth, canvasHeight);
-    //FOR SOME REASON GOOGLE CHROME AND FIREFOX ARE SHOWING THE CANVAS 10% BIGGER THAN IT SHOULD BE, E.G. THE CANVAS SHOULD BE 630PX, BUT IT APPEARS 693PX
     for (const imageObject of IMAGES) {
         const img = new Image();
         img.src = imageObject.src;

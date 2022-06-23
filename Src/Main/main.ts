@@ -126,11 +126,9 @@ const NewImageObject = (src: string, height: number, width: number) => {
     const scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
     return { src: src, leftMM: DEFAULT_IMAGE_OFFSET_MM, topMM: DEFAULT_IMAGE_OFFSET_MM, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF };
 }
-const UpdateImages = (canvas: CanvasRenderingContext2D) => {
+const UpdateImages = (canvas: CanvasRenderingContext2D) => { //Need to work on speed, since currently it is very slow
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
     canvas.clearRect(0, 0, canvasWidth, canvasHeight);
-
-    //FOR SOME REASON GOOGLE CHROME AND FIREFOX ARE SHOWING THE CANVAS 10% BIGGER THAN IT SHOULD BE, E.G. THE CANVAS SHOULD BE 630PX, BUT IT APPEARS 693PX
 
     for (const imageObject of IMAGES) {
         const img = new Image();
