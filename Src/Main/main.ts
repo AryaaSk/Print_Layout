@@ -15,7 +15,7 @@ const FormatPaper = (paper: HTMLElement) => { //to fix blurry lines, only called
     paper.setAttribute('height', String(PAPER_HEIGHT_MM * MM_PX_SF * ZOOM));
     paper.setAttribute('width', String(PAPER_WIDTH_MM * MM_PX_SF * ZOOM));
 }
-const SizePaper = (paper: HTMLElement, canvas: CanvasRenderingContext2D) => {
+const SizePaper = (paper: HTMLElement) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
     FormatPaper(paper);
@@ -95,10 +95,10 @@ const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, canvas: Ca
         const damping = 1 / 400;
         const zoomFactor = $e.deltaY * damping;
         ZOOM += zoomFactor;
-        SizePaper(paper, canvas); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
+        SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
     }
 }
-const InitTaskbarListeners = (canvas: CanvasRenderingContext2D, file: HTMLInputElement) => {
+const InitTaskbarListeners = (canvas: CanvasRenderingContext2D, file: HTMLInputElement, extras: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {
     const fileInput = <HTMLInputElement>document.getElementById("hiddenFile")!;
     file.onclick = () => {
         fileInput.click();
@@ -117,6 +117,15 @@ const InitTaskbarListeners = (canvas: CanvasRenderingContext2D, file: HTMLInputE
                 UPDATE_CANVAS = true;
             }
         }
+    }
+
+    extras.onclick = () => {
+        console.log("Handle extra options")
+    }
+
+    print.onclick = () => {
+        //just print canvas element
+        console.log(paper.width, paper.height)
     }
 }
 
@@ -156,17 +165,17 @@ const CanvasLoop = (canvas: CanvasRenderingContext2D) => { //This seems to work 
 
 const Main = () => {
     const [body, paper, taskbar] = [document.body, <HTMLCanvasElement>document.getElementById("paper")!, document.getElementById("taskbar")!];
-    const [file, extras, print] = [<HTMLInputElement>document.getElementById("addImage")!, document.getElementById("extrasButton")!, document.getElementById("printButton")!]
+    const [file, extras, print] = [<HTMLInputElement>document.getElementById("addImage")!, <HTMLInputElement>document.getElementById("extrasButton")!, <HTMLInputElement>document.getElementById("printButton")!]
     const canvas = paper.getContext('2d')!;
 
     IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 112.5, 200)); //for testing
 
-    SizePaper(paper, canvas);
+    SizePaper(paper);
     FormatPaper(paper);
     PositionPaper(paper);
 
     InitMovementListeners(body, paper, canvas, taskbar);
-    InitTaskbarListeners(canvas, file);
+    InitTaskbarListeners(canvas, file, extras, print, paper);
 
     CanvasLoop(canvas);
 }

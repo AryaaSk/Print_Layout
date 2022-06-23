@@ -13,7 +13,7 @@ const FormatPaper = (paper) => {
     paper.setAttribute('height', String(PAPER_HEIGHT_MM * MM_PX_SF * ZOOM));
     paper.setAttribute('width', String(PAPER_WIDTH_MM * MM_PX_SF * ZOOM));
 };
-const SizePaper = (paper, canvas) => {
+const SizePaper = (paper) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
     FormatPaper(paper);
@@ -83,10 +83,10 @@ const InitMovementListeners = (body, paper, canvas, taskbar) => {
         const damping = 1 / 400;
         const zoomFactor = $e.deltaY * damping;
         ZOOM += zoomFactor;
-        SizePaper(paper, canvas); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
+        SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
     };
 };
-const InitTaskbarListeners = (canvas, file) => {
+const InitTaskbarListeners = (canvas, file, extras, print, paper) => {
     const fileInput = document.getElementById("hiddenFile");
     file.onclick = () => {
         fileInput.click();
@@ -103,6 +103,13 @@ const InitTaskbarListeners = (canvas, file) => {
                 UPDATE_CANVAS = true;
             };
         };
+    };
+    extras.onclick = () => {
+        console.log("Handle extra options");
+    };
+    print.onclick = () => {
+        //just print canvas element
+        console.log(paper.width, paper.height);
     };
 };
 const NewImageObject = (src, height, width) => {
@@ -137,11 +144,11 @@ const Main = () => {
     const [file, extras, print] = [document.getElementById("addImage"), document.getElementById("extrasButton"), document.getElementById("printButton")];
     const canvas = paper.getContext('2d');
     IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 112.5, 200)); //for testing
-    SizePaper(paper, canvas);
+    SizePaper(paper);
     FormatPaper(paper);
     PositionPaper(paper);
     InitMovementListeners(body, paper, canvas, taskbar);
-    InitTaskbarListeners(canvas, file);
+    InitTaskbarListeners(canvas, file, extras, print, paper);
     CanvasLoop(canvas);
 };
 Main();
