@@ -106,18 +106,9 @@ const UpdateImages = (canvas: CanvasRenderingContext2D) => {
         img.src = imageObject.src;
         
         img.onload = () => {
-            let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF, imageObject.topMM * MM_PX_SF];
-            let [imageHeight, imageWidth] = [imageObject.heightMM * MM_PX_SF, imageObject.widthMM * MM_PX_SF]; //these are the dimensions in px
-
-            //we also need to change the size of the image depending on the size of the paper, which is a bit confusing
-            //the constant is the imageObject.height/width, the only thing that is changing is the MM_PX_SF, if it was 4.5, then it means the image is 4.5/3 times bigger
-            const extraSF = MM_PX_SF / 3;
-            imageX /= extraSF;
-            imageY /= extraSF;
-
-            imageHeight /= extraSF;
-            imageWidth /= extraSF;
-
+            //This calculation comes from: X(the distance) * MM_PX_SF / (MM_PX_SF / 3), simplifies to: X * 3. 3 is special because it is the default mm-px scale factor
+            let [imageX, imageY] = [imageObject.leftMM * 3, imageObject.topMM * 3];
+            let [imageHeight, imageWidth] = [imageObject.heightMM * 3, imageObject.widthMM * 3];
             canvas.drawImage(img, imageX, imageY, imageWidth, imageHeight);
         }
     }
