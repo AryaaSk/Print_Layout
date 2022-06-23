@@ -3,16 +3,16 @@ let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
 
 const IMAGES: { src: string, leftMM: number, topMM: number, heightMM: number, widthMM: number }[] = [];
-const DEFAULT_IMAGE_OFFSET = 5;
-const DEFAULT_IMAGE_SIZE = 200;
+const DEFAULT_IMAGE_OFFSET_MM = 5;
+const DEFAULT_IMAGE_SIZE_MM = 200;
 
-const MM_PX_SF = 3; //1mm = 3px
+const dpi = window.devicePixelRatio;
+const MM_PX_SF = 3 * dpi; //1mm = 3px * dpi
 let ZOOM = 1;
 
 const FormatPaper = (paper: HTMLElement) => { //to fix blurry lines, only called once
-    const dpi = window.devicePixelRatio;
-    paper.setAttribute('height', String(PAPER_HEIGHT_MM * MM_PX_SF * dpi));
-    paper.setAttribute('width', String(PAPER_WIDTH_MM * MM_PX_SF * dpi));
+    paper.setAttribute('height', String(PAPER_HEIGHT_MM * MM_PX_SF * ZOOM));
+    paper.setAttribute('width', String(PAPER_WIDTH_MM * MM_PX_SF * ZOOM));
 }
 const SizePaper = (paper: HTMLElement, canvas: CanvasRenderingContext2D) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
@@ -29,19 +29,36 @@ const PositionPaper = (paper: HTMLElement) => {
 
 const CheckIntersectionElement = (x: number, y: number, element: HTMLElement) => {
     const boundingBox = element.getBoundingClientRect();
-    if (x > boundingBox.left && x < boundingBox.right && y > boundingBox.top && y < boundingBox.bottom) { //for some reason top and bottom are inverted
+    if (x > boundingBox.left && x < boundingBox.right && y > boundingBox.top && y < boundingBox.bottom) { //top and bottom are inverted since in canvas coordinate system y increases as it goes down
+        return true;
+    }
+    return false;
+}
+const CheckIntersectionImage = (x: number, y: number, paperBoundingBox: DOMRect, imageIndex: number) => {
+    const img = IMAGES[imageIndex];
+    const [left, right, top, bottom] = [paperBoundingBox.left + img.leftMM * MM_PX_SF * ZOOM, paperBoundingBox.left + img.leftMM * MM_PX_SF * ZOOM + img.widthMM * MM_PX_SF * ZOOM, paperBoundingBox.top + img.topMM * MM_PX_SF * ZOOM, paperBoundingBox.top + img.topMM * MM_PX_SF * ZOOM + img.heightMM * MM_PX_SF * ZOOM];
+    if (x > left && x < right && y > top && y < bottom) {
         return true;
     }
     return false;
 }
 const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, canvas: CanvasRenderingContext2D, taskbar: HTMLElement) => {
     let pointerDown = false;
+    let selectedImage: number | undefined = undefined;
     let [prevX, prevY] = [0, 0];
 
     body.onpointerdown = ($e) => {
+        selectedImage = undefined;
         const [x, y] = [$e.clientX, $e.clientY]; //check if pointer is above taskbar or any images, if so then doesn't count
         if (CheckIntersectionElement(x, y, taskbar) == true) {
             return;
+        }
+
+        const paperBoundingBox = paper.getBoundingClientRect();
+        for (let i = 0; i != IMAGES.length; i += 1) {
+            if (CheckIntersectionImage(x, y, paperBoundingBox, i) == true) {
+                selectedImage = i;
+            }
         }
 
         pointerDown = true;
@@ -60,9 +77,17 @@ const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, canvas: Ca
         const [deltaX, deltaY] = [currentX - prevX, currentY - prevY];
         [prevX, prevY] = [currentX, currentY];
 
-        PAPER_POSITION.left += deltaX;
-        PAPER_POSITION.top += deltaY;
-        PositionPaper(paper);
+        if (selectedImage == undefined) {
+            PAPER_POSITION.left += deltaX;
+            PAPER_POSITION.top += deltaY;
+            PositionPaper(paper);
+        }
+        else {
+            const img = IMAGES[selectedImage];
+            img.leftMM += deltaX / MM_PX_SF / ZOOM; //applying the reverse to go from px -> mm
+            img.topMM += deltaY / MM_PX_SF/ ZOOM;
+            UpdateImages(canvas);
+        }
     }
 
     body.onwheel = ($e) => {
@@ -96,23 +121,24 @@ const InitTaskbarListeners = (canvas: CanvasRenderingContext2D, file: HTMLInputE
 
 
 const NewImageObject = (src: string, height: number, width: number) => {
-    const heightScaleFactor = (DEFAULT_IMAGE_SIZE * MM_PX_SF) / height;
-    const widthScaleFactor = (DEFAULT_IMAGE_SIZE * MM_PX_SF) / width;
+    const heightScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / height;
+    const widthScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / width;
     const scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-    return { src: src, leftMM: DEFAULT_IMAGE_OFFSET, topMM: DEFAULT_IMAGE_OFFSET, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF };
+    return { src: src, leftMM: DEFAULT_IMAGE_OFFSET_MM, topMM: DEFAULT_IMAGE_OFFSET_MM, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF };
 }
 const UpdateImages = (canvas: CanvasRenderingContext2D) => {
-    const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF, PAPER_WIDTH_MM * MM_PX_SF];
+    const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
     canvas.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    //FOR SOME REASON GOOGLE CHROME AND FIREFOX ARE SHOWING THE CANVAS 10% BIGGER THAN IT SHOULD BE, E.G. THE CANVAS SHOULD BE 630PX, BUT IT APPEARS 693PX
 
     for (const imageObject of IMAGES) {
         const img = new Image();
         img.src = imageObject.src;
         
         img.onload = () => {
-            let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF, imageObject.topMM * MM_PX_SF];
-            let [imageHeight, imageWidth] = [imageObject.heightMM * MM_PX_SF, imageObject.widthMM * MM_PX_SF];
-
+            let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF * ZOOM, imageObject.topMM * MM_PX_SF * ZOOM];
+            let [imageHeight, imageWidth] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
             canvas.drawImage(img, imageX, imageY, imageWidth, imageHeight); //image size is constant, but changes with canvas for some reason
         }
     }
@@ -125,6 +151,8 @@ const Main = () => {
     const [body, paper, taskbar] = [document.body, <HTMLCanvasElement>document.getElementById("paper")!, document.getElementById("taskbar")!];
     const [file, extras, print] = [<HTMLInputElement>document.getElementById("addImage")!, document.getElementById("extrasButton")!, document.getElementById("printButton")!]
     const canvas = paper.getContext('2d')!;
+
+    IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 112.5, 200)); //for testing
 
     SizePaper(paper, canvas);
     FormatPaper(paper);
