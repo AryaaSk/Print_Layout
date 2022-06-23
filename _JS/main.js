@@ -11,7 +11,7 @@ const PositionPaper = (paper) => {
     paper.style.left = `${PAPER_POSITION.left}px`;
     paper.style.top = `${PAPER_POSITION.top}px`;
 };
-const InitMovementListeners = (body, paper, taskbar, slider) => {
+const InitMovementListeners = (body, paper, taskbar) => {
     let pointerDown = false;
     let [prevX, prevY] = [0, 0];
     body.onpointerdown = ($e) => {
@@ -44,11 +44,25 @@ const InitMovementListeners = (body, paper, taskbar, slider) => {
         SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
     };
 };
+const InitTaskbarListeners = (file) => {
+    const fileInput = document.getElementById("hiddenFile");
+    file.onclick = () => {
+        fileInput.click();
+    };
+    fileInput.onchange = () => {
+        const fReader = new FileReader();
+        fReader.readAsDataURL(fileInput.files[0]);
+        fReader.onloadend = ($e) => {
+            const img = $e.target.result;
+        };
+    };
+};
 const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper"), document.getElementById("taskbar")];
-    const [slider, extras, print] = [document.getElementById("zoomSlider"), document.getElementById("extrasButton"), document.getElementById("printButton")];
+    const [file, extras, print] = [document.getElementById("addImage"), document.getElementById("extrasButton"), document.getElementById("printButton")];
     SizePaper(paper);
     PositionPaper(paper);
-    InitMovementListeners(body, paper, taskbar, slider);
+    InitMovementListeners(body, paper, taskbar);
+    InitTaskbarListeners(file);
 };
 Main();

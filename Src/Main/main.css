@@ -21,9 +21,11 @@ body {
 
 #taskbar {
     position: fixed;
-    margin: 0 auto;
+    left: calc(50% - 200px);
+    right: calc(50% - 200px);
     bottom: 50px;
-    height: 85px;
+
+    height: 60px;
     width: 400px;
 
     display: grid;
@@ -37,30 +39,6 @@ body {
     transform: translate3d(0, 0, 0);
 }
 
-/* DONT NEED ZOOM SLIDER, USER CAN JUST USE MOUSE WHEEL */
-/*
-#zoomSlider {
-    -webkit-appearance: none;
-
-    height: 5px;
-    width: 75%;
-
-    background: #eeeeee;
-    background-color: #eeeeee;
-    border: none;
-    outline: none;
-}
-#zoomSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-
-    height: 29px;
-    width: 29px;
-
-    border-radius: 50%;
-    background-color: #ffffff;
-}
-*/
-
 .taskbarButton {
     height: 100%;
     width: 100%;
@@ -69,8 +47,16 @@ body {
     background-color: transparent;
 }
 .taskbarButton:hover{
-    background-color: #888888;
+    background-color: #212121;
     transition: 500ms background-color;
+}
+.taskbarButton:first-of-type {
+    border-top-left-radius: var(--taskbarBorderRadius);
+    border-bottom-left-radius: var(--taskbarBorderRadius);
+}
+.taskbarButton:last-of-type {
+    border-top-right-radius: var(--taskbarBorderRadius);
+    border-bottom-right-radius: var(--taskbarBorderRadius);
 }
 .taskBarButtonImage {
     max-height: 45%;

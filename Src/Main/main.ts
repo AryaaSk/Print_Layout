@@ -14,7 +14,7 @@ const PositionPaper = (paper: HTMLElement) => {
 
 
 
-const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, taskbar: HTMLElement, slider: HTMLElement) => {
+const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, taskbar: HTMLElement) => {
     let pointerDown = false;
     let [prevX, prevY] = [0, 0];
 
@@ -55,16 +55,33 @@ const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, taskbar: H
     }
 }
 
+const InitTaskbarListeners = (file: HTMLInputElement) => {
+    const fileInput = <HTMLInputElement>document.getElementById("hiddenFile")!;
+    file.onclick = () => {
+        fileInput.click();
+    }
+
+    fileInput.onchange = () => {
+        const fReader = new FileReader();
+        fReader.readAsDataURL(fileInput.files![0]);
+        fReader.onloadend = ($e) => {
+            const img = $e.target!.result;
+            
+            
+        }
+    }
+}
 
 
 const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper")!, document.getElementById("taskbar")!];
-    const [slider, extras, print] = [<HTMLInputElement>document.getElementById("zoomSlider")!, document.getElementById("extrasButton")!, document.getElementById("printButton")!]
+    const [file, extras, print] = [<HTMLInputElement>document.getElementById("addImage")!, document.getElementById("extrasButton")!, document.getElementById("printButton")!]
 
     SizePaper(paper);
     PositionPaper(paper);
 
-    InitMovementListeners(body, paper, taskbar, slider);
+    InitMovementListeners(body, paper, taskbar);
+    InitTaskbarListeners(file);
 }
 
 Main();
