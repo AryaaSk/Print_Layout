@@ -1,17 +1,22 @@
 "use strict";
+const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
-let MM_PX_SF = 3; //1mm = 3px
-const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 const IMAGES = [];
-const ApplyPaperDPI = (paper) => {
+const DEFAULT_IMAGE_OFFSET = 5;
+const DEFAULT_IMAGE_SIZE = 200;
+const MM_PX_SF = 3; //1mm = 3px
+let ZOOM = 1;
+const FormatPaper = (paper) => {
     const dpi = window.devicePixelRatio;
     paper.setAttribute('height', String(PAPER_HEIGHT_MM * MM_PX_SF * dpi));
     paper.setAttribute('width', String(PAPER_WIDTH_MM * MM_PX_SF * dpi));
 };
-const SizePaper = (paper) => {
-    paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF}px`;
-    paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF}px`;
+const SizePaper = (paper, canvas) => {
+    paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
+    paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
+    FormatPaper(paper);
+    UpdateImages(canvas);
 };
 const PositionPaper = (paper) => {
     paper.style.left = `${PAPER_POSITION.left}px`;
@@ -24,7 +29,7 @@ const CheckIntersectionElement = (x, y, element) => {
     }
     return false;
 };
-const InitMovementListeners = (body, paper, taskbar) => {
+const InitMovementListeners = (body, paper, canvas, taskbar) => {
     let pointerDown = false;
     let [prevX, prevY] = [0, 0];
     body.onpointerdown = ($e) => {
@@ -50,10 +55,10 @@ const InitMovementListeners = (body, paper, taskbar) => {
         PositionPaper(paper);
     };
     body.onwheel = ($e) => {
-        const damping = 1 / 200;
+        const damping = 1 / 400;
         const zoomFactor = $e.deltaY * damping;
-        MM_PX_SF += zoomFactor;
-        SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
+        ZOOM += zoomFactor;
+        SizePaper(paper, canvas); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
     };
 };
 const InitTaskbarListeners = (canvas, file) => {
@@ -76,23 +81,21 @@ const InitTaskbarListeners = (canvas, file) => {
     };
 };
 const NewImageObject = (src, height, width) => {
-    const heightScaleFactor = (100 * MM_PX_SF) / height;
-    const widthScaleFactor = (100 * MM_PX_SF) / width;
+    const heightScaleFactor = (DEFAULT_IMAGE_SIZE * MM_PX_SF) / height;
+    const widthScaleFactor = (DEFAULT_IMAGE_SIZE * MM_PX_SF) / width;
     const scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-    return { src: src, leftMM: 10, topMM: 10, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF };
+    return { src: src, leftMM: DEFAULT_IMAGE_OFFSET, topMM: DEFAULT_IMAGE_OFFSET, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF };
 };
 const UpdateImages = (canvas) => {
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF, PAPER_WIDTH_MM * MM_PX_SF];
     canvas.clearRect(0, 0, canvasWidth, canvasHeight);
     for (const imageObject of IMAGES) {
-        console.log(imageObject);
         const img = new Image();
         img.src = imageObject.src;
         img.onload = () => {
-            //This calculation comes from: X(the distance) * MM_PX_SF / (MM_PX_SF / 3), simplifies to: X * 3. 3 is special because it is the default mm-px scale factor
-            let [imageX, imageY] = [imageObject.leftMM * 3, imageObject.topMM * 3];
-            let [imageHeight, imageWidth] = [imageObject.heightMM * 3, imageObject.widthMM * 3];
-            canvas.drawImage(img, imageX, imageY, imageWidth, imageHeight);
+            let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF, imageObject.topMM * MM_PX_SF];
+            let [imageHeight, imageWidth] = [imageObject.heightMM * MM_PX_SF, imageObject.widthMM * MM_PX_SF];
+            canvas.drawImage(img, imageX, imageY, imageWidth, imageHeight); //image size is constant, but changes with canvas for some reason
         };
     }
 };
@@ -100,10 +103,10 @@ const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper"), document.getElementById("taskbar")];
     const [file, extras, print] = [document.getElementById("addImage"), document.getElementById("extrasButton"), document.getElementById("printButton")];
     const canvas = paper.getContext('2d');
-    SizePaper(paper);
-    ApplyPaperDPI(paper);
+    SizePaper(paper, canvas);
+    FormatPaper(paper);
     PositionPaper(paper);
-    InitMovementListeners(body, paper, taskbar);
+    InitMovementListeners(body, paper, canvas, taskbar);
     InitTaskbarListeners(canvas, file);
 };
 Main();
