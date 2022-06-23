@@ -3,6 +3,8 @@ let PAPER_WIDTH_MM = 210;
 let MM_PX_SF = 3; //1mm = 3px
 const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 
+const IMAGES: { src: string, left: number, top: number }[] = [ { src: "/Assets/test.png", left: 0, top: 0 } ]; /* Left and top are relative to paper */
+
 const SizePaper = (paper: HTMLElement) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF}px`;
@@ -14,15 +16,26 @@ const PositionPaper = (paper: HTMLElement) => {
 
 
 
+const CheckIntersection = (x: number, y: number, element: HTMLElement) => {
+    const boundingBox = element.getBoundingClientRect();
+    if (x > boundingBox.left && x < boundingBox.right && y > boundingBox.top && y < boundingBox.bottom) { //for some reason top and bottom are inverted
+        return true;
+    }
+    return false;
+}
 const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, taskbar: HTMLElement) => {
     let pointerDown = false;
     let [prevX, prevY] = [0, 0];
 
     body.onpointerdown = ($e) => {
-        const [x, y] = [$e.clientX, $e.clientY]; //check if pointer is above taskbar, if so then doesn't count
-        const taskBarBoundingBox = taskbar.getBoundingClientRect();
-        if (x > taskBarBoundingBox.left && x < taskBarBoundingBox.right && y > taskBarBoundingBox.top && y < taskBarBoundingBox.bottom) { //for some reason top and bottom are inverted
+        const [x, y] = [$e.clientX, $e.clientY]; //check if pointer is above taskbar or any images, if so then doesn't count
+        if (CheckIntersection(x, y, taskbar) == true) {
             return;
+        }
+        for (let i = 0; i != IMAGES.length; i += 1) {
+            if (CheckIntersection(x, y, document.getElementById(String(i))!) == true) {
+                return;
+            }   
         }
 
         pointerDown = true;
@@ -54,8 +67,7 @@ const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, taskbar: H
 
     }
 }
-
-const InitTaskbarListeners = (file: HTMLInputElement) => {
+const InitTaskbarListeners = (imagesContainer: HTMLElement, file: HTMLInputElement) => {
     const fileInput = <HTMLInputElement>document.getElementById("hiddenFile")!;
     file.onclick = () => {
         fileInput.click();
@@ -65,23 +77,62 @@ const InitTaskbarListeners = (file: HTMLInputElement) => {
         const fReader = new FileReader();
         fReader.readAsDataURL(fileInput.files![0]);
         fReader.onloadend = ($e) => {
-            const img = $e.target!.result;
-            
-            
+            const src = <string>$e.target!.result;
+            IMAGES.push(NewImageObject(src));
+            UpdateImages(imagesContainer);
+
+            /*
+            img.onload = () => {
+                const [height, width] = [img.naturalHeight, img.naturalWidth];
+                const heightScaleFactor = 500 / height;
+                const widthScaleFactor = 500 / width;
+                const scaleFactor = (heightScaleFactor > widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
+                console.log(height, width);
+
+                canvas.drawImage(img, 10, 10, 480, 270);
+            }
+            */
         }
     }
 }
 
 
+const NewImageObject = (src: string) => {
+    return { src: src, left: 0, top: 0 };
+}
+const UpdateImages = (container: HTMLElement) => {
+    container.innerHTML = "";
+    
+    let counter = 0;
+    for (const imageObject of IMAGES) {
+        const image = document.createElement('img');
+        image.id = String(counter);
+        image.className = "paperImage";
+
+        image.src = imageObject.src;
+        image.style.left = `${PAPER_POSITION.left + imageObject.left}px`;
+        image.style.top = `${PAPER_POSITION.left + imageObject.top}px`;
+
+        container.append(image);
+        counter += 1;
+    }
+}
+
+
+
+
 const Main = () => {
-    const [body, paper, taskbar] = [document.body, document.getElementById("paper")!, document.getElementById("taskbar")!];
+    const [body, paper, taskbar] = [document.body, <HTMLCanvasElement>document.getElementById("paper")!, document.getElementById("taskbar")!];
     const [file, extras, print] = [<HTMLInputElement>document.getElementById("addImage")!, document.getElementById("extrasButton")!, document.getElementById("printButton")!]
+    const [imagesContainer] = [document.getElementById("images")!];
 
     SizePaper(paper);
     PositionPaper(paper);
 
     InitMovementListeners(body, paper, taskbar);
-    InitTaskbarListeners(file);
+    InitTaskbarListeners(imagesContainer, file);
+
+    UpdateImages(imagesContainer);
 }
 
 Main();

@@ -7,7 +7,17 @@ body {
     --taskbarBorderRadius: 10px;
 }
 
-
+#images {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+#paperImage {
+    position: relative;
+    /* Positioned in JS */
+}
 
 #paper {
     /* Size and position set dynamically in JS (different paper sizes), for now will just make A4 */
