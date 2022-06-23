@@ -5,6 +5,7 @@ let PAPER_WIDTH_MM = 210;
 const IMAGES: { src: string, leftMM: number, topMM: number, heightMM: number, widthMM: number }[] = [];
 const DEFAULT_IMAGE_OFFSET_MM = 5;
 const DEFAULT_IMAGE_SIZE_MM = 200;
+let UPDATE_CANVAS = false;
 
 const dpi = window.devicePixelRatio;
 const MM_PX_SF = 3 * dpi; //1mm = 3px * dpi
@@ -18,7 +19,7 @@ const SizePaper = (paper: HTMLElement, canvas: CanvasRenderingContext2D) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
     FormatPaper(paper);
-    UpdateImages(canvas);
+    UPDATE_CANVAS = true;
 }
 const PositionPaper = (paper: HTMLElement) => {
     paper.style.left = `${PAPER_POSITION.left}px`;
@@ -86,7 +87,7 @@ const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, canvas: Ca
             const img = IMAGES[selectedImage];
             img.leftMM += deltaX / MM_PX_SF / ZOOM; //applying the reverse to go from px -> mm
             img.topMM += deltaY / MM_PX_SF/ ZOOM;
-            UpdateImages(canvas);
+            UPDATE_CANVAS = true;
         }
     }
 
@@ -113,7 +114,7 @@ const InitTaskbarListeners = (canvas: CanvasRenderingContext2D, file: HTMLInputE
             image.src = src;
             image.onload = () => {
                 IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
-                UpdateImages(canvas);
+                UPDATE_CANVAS = true;
             }
         }
     }
@@ -141,6 +142,14 @@ const UpdateImages = (canvas: CanvasRenderingContext2D) => { //Need to work on s
         }
     }
 }
+const CanvasLoop = (canvas: CanvasRenderingContext2D) => { //This seems to work better than individually updating the canvas everytime there's a change, but there is still a bit of flickering
+    setInterval(() => {
+        if (UPDATE_CANVAS == true) {
+            UpdateImages(canvas);
+            UPDATE_CANVAS = false;
+        }
+    }, 16);
+}
 
 
 
@@ -158,6 +167,8 @@ const Main = () => {
 
     InitMovementListeners(body, paper, canvas, taskbar);
     InitTaskbarListeners(canvas, file);
+
+    CanvasLoop(canvas);
 }
 
 Main();

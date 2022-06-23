@@ -5,6 +5,7 @@ let PAPER_WIDTH_MM = 210;
 const IMAGES = [];
 const DEFAULT_IMAGE_OFFSET_MM = 5;
 const DEFAULT_IMAGE_SIZE_MM = 200;
+let UPDATE_CANVAS = false;
 const dpi = window.devicePixelRatio;
 const MM_PX_SF = 3 * dpi; //1mm = 3px * dpi
 let ZOOM = 1;
@@ -16,7 +17,7 @@ const SizePaper = (paper, canvas) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
     FormatPaper(paper);
-    UpdateImages(canvas);
+    UPDATE_CANVAS = true;
 };
 const PositionPaper = (paper) => {
     paper.style.left = `${PAPER_POSITION.left}px`;
@@ -75,7 +76,7 @@ const InitMovementListeners = (body, paper, canvas, taskbar) => {
             const img = IMAGES[selectedImage];
             img.leftMM += deltaX / MM_PX_SF / ZOOM; //applying the reverse to go from px -> mm
             img.topMM += deltaY / MM_PX_SF / ZOOM;
-            UpdateImages(canvas);
+            UPDATE_CANVAS = true;
         }
     };
     body.onwheel = ($e) => {
@@ -99,7 +100,7 @@ const InitTaskbarListeners = (canvas, file) => {
             image.src = src;
             image.onload = () => {
                 IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
-                UpdateImages(canvas);
+                UPDATE_CANVAS = true;
             };
         };
     };
@@ -123,6 +124,14 @@ const UpdateImages = (canvas) => {
         };
     }
 };
+const CanvasLoop = (canvas) => {
+    setInterval(() => {
+        if (UPDATE_CANVAS == true) {
+            UpdateImages(canvas);
+            UPDATE_CANVAS = false;
+        }
+    }, 16);
+};
 const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper"), document.getElementById("taskbar")];
     const [file, extras, print] = [document.getElementById("addImage"), document.getElementById("extrasButton"), document.getElementById("printButton")];
@@ -133,5 +142,6 @@ const Main = () => {
     PositionPaper(paper);
     InitMovementListeners(body, paper, canvas, taskbar);
     InitTaskbarListeners(canvas, file);
+    CanvasLoop(canvas);
 };
 Main();
