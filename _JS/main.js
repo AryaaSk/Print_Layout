@@ -108,8 +108,36 @@ const InitTaskbarListeners = (canvas, file, extras, print, paper) => {
         console.log("Handle extra options");
     };
     print.onclick = () => {
-        //just print canvas element
-        console.log(paper.width, paper.height);
+        let width = paper.width;
+        let height = paper.height;
+        //set the orientation
+        const pdf = (width > height) ? new jsPDF('l', 'px', [width, height]) : new jsPDF('p', 'px', [height, width]);
+        //then we get the dimensions from the 'pdf' file itself
+        width = pdf.internal.pageSize.getWidth();
+        height = pdf.internal.pageSize.getHeight();
+        pdf.addImage(paper, 'PNG', 0, 0, width, height);
+        const prevZoom = ZOOM;
+        ZOOM = 5;
+        SizePaper(paper);
+        setTimeout(() => {
+            //https://github.com/parallax/jsPDF/issues/1487
+            pdf.autoPrint();
+            const isSafari = /^((?!chrome|android).)*safari/i.test(window.navigator.userAgent);
+            if (isSafari) {
+                window.open(pdf.output('bloburl'), '_blank');
+            }
+            else {
+                const hiddFrame = document.createElement('iframe');
+                hiddFrame.style.position = 'fixed';
+                hiddFrame.style.width = '1px';
+                hiddFrame.style.height = '1px';
+                hiddFrame.style.opacity = '0.01';
+                hiddFrame.src = pdf.output('bloburl');
+                document.body.appendChild(hiddFrame);
+            }
+            ZOOM = prevZoom;
+            SizePaper(paper);
+        }, 1000);
     };
 };
 const NewImageObject = (src, height, width) => {
@@ -120,7 +148,9 @@ const NewImageObject = (src, height, width) => {
 };
 const UpdateImages = (canvas) => {
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
-    canvas.clearRect(0, 0, canvasWidth, canvasHeight);
+    //canvas.clearRect(0, 0, canvasWidth, canvasHeight);
+    canvas.fillStyle = "white";
+    canvas.fillRect(0, 0, canvasWidth, canvasHeight);
     for (const imageObject of IMAGES) {
         const img = new Image();
         img.src = imageObject.src;
