@@ -207,7 +207,16 @@ const CanvasLoop = (paper, canvas, transformOverlay) => {
             UpdateImages(canvas);
             UPDATE_CANVAS = false;
         }
-        SELECTED_IMAGE_INDEX = CheckForHover(paper);
+        const newSelectedIndex = CheckForHover(paper);
+        if (newSelectedIndex != undefined && SELECTED_IMAGE_INDEX == undefined) { //dont want to change the selected index to another index if the user is already selected one
+            SELECTED_IMAGE_INDEX = newSelectedIndex;
+        }
+        else if (newSelectedIndex == undefined && SELECTED_IMAGE_INDEX != undefined) {
+            SELECTED_IMAGE_INDEX = newSelectedIndex;
+        }
+        else if (newSelectedIndex != undefined && CheckIntersectionImage(MOUSE_X, MOUSE_Y, paper.getBoundingClientRect(), SELECTED_IMAGE_INDEX) == false) { //only change if the selected index is not being hovered over anymore
+            SELECTED_IMAGE_INDEX = newSelectedIndex;
+        }
         if (SELECTED_IMAGE_INDEX != undefined) { //display transform overlay over the image, it is purely for aesthetic
             const img = IMAGES[SELECTED_IMAGE_INDEX];
             const paperBoundingBox = paper.getBoundingClientRect();

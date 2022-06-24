@@ -28,7 +28,7 @@ body {
     box-sizing: border-box;         /* Opera/IE 8+ */
 
     background-color: transparent;
-    border: 5px solid black;
+    border: 5px solid #c4c4c4;
     
     display: grid;
     place-content: center;
