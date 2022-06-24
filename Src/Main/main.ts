@@ -131,16 +131,20 @@ const InitTaskbarListeners = (file: HTMLInputElement, extras: HTMLInputElement, 
     }
 
     fileInput.onchange = () => {
-        const fReader = new FileReader();
-        fReader.readAsDataURL(fileInput.files![0]);
-        fReader.onloadend = ($e) => {
-            const src = <string>$e.target!.result;
+        const files = fileInput.files!;
 
-            const image = new Image();
-            image.src = src;
-            image.onload = () => {
-                IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
-                UPDATE_CANVAS = true;
+        for (const file of files) {
+            const fReader = new FileReader();
+            fReader.readAsDataURL(file);
+            fReader.onloadend = ($e) => {
+                const src = <string>$e.target!.result;
+
+                const image = new Image();
+                image.src = src;
+                image.onload = () => {
+                    IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
+                    UPDATE_CANVAS = true;
+                }
             }
         }
     }
@@ -187,17 +191,22 @@ const InitTaskbarListeners = (file: HTMLInputElement, extras: HTMLInputElement, 
 
 
 const NewImageObject = (src: string, height: number, width: number, leftMM?: number, topMM?: number) => {
+    const [left, top] = [(leftMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : leftMM, (topMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : topMM]
+
     const heightScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / height;
     const widthScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / width;
-    const scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-    const [left, top] = [(leftMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : leftMM, (topMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : topMM]
+    let scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
+    if (scaleFactor > 1) { //don't want to enlarge images
+        scaleFactor = 1;
+    }
+
     return { src: src, leftMM: left, topMM: top, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF};
 }
 const UpdateImages = (canvas: CanvasRenderingContext2D) => { //Need to work on speed, since currently it is very slow
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
-    //canvas.clearRect(0, 0, canvasWidth, canvasHeight);
+    
     canvas.fillStyle = "white";
-    canvas.fillRect(0, 0, canvasWidth, canvasHeight);
+    canvas.fillRect(0, 0, canvasWidth, canvasHeight); //to make the background white
 
     for (const imageObject of IMAGES) {
         const img = new Image();
@@ -205,11 +214,9 @@ const UpdateImages = (canvas: CanvasRenderingContext2D) => { //Need to work on s
         
         img.onload = () => {
             let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF * ZOOM, imageObject.topMM * MM_PX_SF * ZOOM];
-            const [originalImageHeight, originalImageWidth] = [img.naturalHeight, img.naturalWidth]
-            let [imageHeightPXVisible, imageWidthPXVisible] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
-            const [heightScale, widthScale] = [imageHeightPXVisible / originalImageHeight, imageWidthPXVisible / originalImageWidth]
+            let [imageHeightPX, imageWidthPX] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
 
-            canvas.drawImage(img, imageX, imageY, imageWidthPXVisible, imageHeightPXVisible);
+            canvas.drawImage(img, imageX, imageY, imageWidthPX, imageHeightPX);
         }
     }
 }
@@ -268,7 +275,7 @@ const Main = () => {
     const [file, extras, print] = [<HTMLInputElement>document.getElementById("addImage")!, <HTMLInputElement>document.getElementById("extrasButton")!, <HTMLInputElement>document.getElementById("printButton")!]
     const [canvas, transformOverlay, rotateButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!];
 
-    IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 112.5, 200)); //for testing
+    //IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
 
     SizePaper(paper);
     FormatPaper(paper);

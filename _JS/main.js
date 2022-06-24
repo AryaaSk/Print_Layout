@@ -121,17 +121,20 @@ const InitTaskbarListeners = (file, extras, print, paper) => {
         fileInput.click();
     };
     fileInput.onchange = () => {
-        const fReader = new FileReader();
-        fReader.readAsDataURL(fileInput.files[0]);
-        fReader.onloadend = ($e) => {
-            const src = $e.target.result;
-            const image = new Image();
-            image.src = src;
-            image.onload = () => {
-                IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
-                UPDATE_CANVAS = true;
+        const files = fileInput.files;
+        for (const file of files) {
+            const fReader = new FileReader();
+            fReader.readAsDataURL(file);
+            fReader.onloadend = ($e) => {
+                const src = $e.target.result;
+                const image = new Image();
+                image.src = src;
+                image.onload = () => {
+                    IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
+                    UPDATE_CANVAS = true;
+                };
             };
-        };
+        }
     };
     extras.onclick = () => {
         console.log("Handle extra options");
@@ -168,26 +171,26 @@ const InitTaskbarListeners = (file, extras, print, paper) => {
     };
 };
 const NewImageObject = (src, height, width, leftMM, topMM) => {
+    const [left, top] = [(leftMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : leftMM, (topMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : topMM];
     const heightScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / height;
     const widthScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / width;
-    const scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-    const [left, top] = [(leftMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : leftMM, (topMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : topMM];
+    let scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
+    if (scaleFactor > 1) { //don't want to enlarge images
+        scaleFactor = 1;
+    }
     return { src: src, leftMM: left, topMM: top, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF };
 };
 const UpdateImages = (canvas) => {
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
-    //canvas.clearRect(0, 0, canvasWidth, canvasHeight);
     canvas.fillStyle = "white";
-    canvas.fillRect(0, 0, canvasWidth, canvasHeight);
+    canvas.fillRect(0, 0, canvasWidth, canvasHeight); //to make the background white
     for (const imageObject of IMAGES) {
         const img = new Image();
         img.src = imageObject.src;
         img.onload = () => {
             let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF * ZOOM, imageObject.topMM * MM_PX_SF * ZOOM];
-            const [originalImageHeight, originalImageWidth] = [img.naturalHeight, img.naturalWidth];
-            let [imageHeightPXVisible, imageWidthPXVisible] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
-            const [heightScale, widthScale] = [imageHeightPXVisible / originalImageHeight, imageWidthPXVisible / originalImageWidth];
-            canvas.drawImage(img, imageX, imageY, imageWidthPXVisible, imageHeightPXVisible);
+            let [imageHeightPX, imageWidthPX] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
+            canvas.drawImage(img, imageX, imageY, imageWidthPX, imageHeightPX);
         };
     }
 };
@@ -235,7 +238,7 @@ const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper"), document.getElementById("taskbar")];
     const [file, extras, print] = [document.getElementById("addImage"), document.getElementById("extrasButton"), document.getElementById("printButton")];
     const [canvas, transformOverlay, rotateButton] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("rotateButton")];
-    IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 112.5, 200)); //for testing
+    //IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
     SizePaper(paper);
     FormatPaper(paper);
     PositionPaper(paper);
