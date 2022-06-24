@@ -20,6 +20,27 @@ body {
     image-rendering: optimizeSpeed;
 }
 
+#transformOverlay {
+    /* Overlays when user hovers on an element, thus size and position are set dynamically */
+    position: fixed;
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+    box-sizing: border-box;         /* Opera/IE 8+ */
+
+    background-color: transparent;
+    border: 5px solid black;
+    
+    display: grid;
+    place-content: center;
+}
+#rotateButton {
+    height: 50px;
+    width: 50px;
+
+    background-color: white;
+    font-size: xx-large;
+}
+
 
 #taskbar {
     position: fixed;

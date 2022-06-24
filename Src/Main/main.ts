@@ -4,14 +4,16 @@ const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
 
-const IMAGES: { src: string, leftMM: number, topMM: number, heightMM: number, widthMM: number }[] = [];
+const IMAGES: { src: string, leftMM: number, topMM: number, heightMM: number, widthMM: number, rotation: number }[] = []; //rotation in degrees
 const DEFAULT_IMAGE_OFFSET_MM = 5;
 const DEFAULT_IMAGE_SIZE_MM = 200;
 let UPDATE_CANVAS = false;
 
-const dpi = window.devicePixelRatio;
-const MM_PX_SF = 3 * dpi; //1mm = 3px * dpi
+const MM_PX_SF = 3 * window.devicePixelRatio; //1mm = 3px * dpi
 let ZOOM = 1;
+
+let [MOUSE_X, MOUSE_Y] = [0, 0];
+let SELECTED_IMAGE_INDEX: number | undefined = undefined;
 
 const FormatPaper = (paper: HTMLElement) => { //to fix blurry lines, only called once
     paper.setAttribute('height', String(PAPER_HEIGHT_MM * MM_PX_SF * ZOOM));
@@ -45,23 +47,14 @@ const CheckIntersectionImage = (x: number, y: number, paperBoundingBox: DOMRect,
     }
     return false;
 }
-const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, canvas: CanvasRenderingContext2D, taskbar: HTMLElement) => {
+const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, taskbar: HTMLElement) => {
     let pointerDown = false;
-    let selectedImage: number | undefined = undefined;
     let [prevX, prevY] = [0, 0];
 
     body.onpointerdown = ($e) => {
-        selectedImage = undefined;
         const [x, y] = [$e.clientX, $e.clientY]; //check if pointer is above taskbar or any images, if so then doesn't count
         if (CheckIntersectionElement(x, y, taskbar) == true) {
             return;
-        }
-
-        const paperBoundingBox = paper.getBoundingClientRect();
-        for (let i = 0; i != IMAGES.length; i += 1) {
-            if (CheckIntersectionImage(x, y, paperBoundingBox, i) == true) {
-                selectedImage = i;
-            }
         }
 
         pointerDown = true;
@@ -72,6 +65,7 @@ const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, canvas: Ca
     }
 
     body.onpointermove = ($e) => {
+        [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
         if (pointerDown == false) {
             return;
         }
@@ -80,17 +74,25 @@ const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, canvas: Ca
         const [deltaX, deltaY] = [currentX - prevX, currentY - prevY];
         [prevX, prevY] = [currentX, currentY];
 
-        if (selectedImage == undefined) {
+        if (SELECTED_IMAGE_INDEX == undefined) {
             PAPER_POSITION.left += deltaX;
             PAPER_POSITION.top += deltaY;
             PositionPaper(paper);
         }
         else {
-            const img = IMAGES[selectedImage];
+            //check if image is being scaled, if it is at the corners (within a certain radius)
+            
+            const img = IMAGES[SELECTED_IMAGE_INDEX];
             img.leftMM += deltaX / MM_PX_SF / ZOOM; //applying the reverse to go from px -> mm
             img.topMM += deltaY / MM_PX_SF/ ZOOM;
             UPDATE_CANVAS = true;
         }
+    }
+
+    rotateButton.onclick = () => {
+        const img = IMAGES[SELECTED_IMAGE_INDEX!];
+        img.rotation += 90;
+        UPDATE_CANVAS = true;
     }
 
     body.onwheel = ($e) => {
@@ -100,7 +102,7 @@ const InitMovementListeners = (body: HTMLElement, paper: HTMLElement, canvas: Ca
         SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
     }
 }
-const InitTaskbarListeners = (canvas: CanvasRenderingContext2D, file: HTMLInputElement, extras: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {
+const InitTaskbarListeners = (file: HTMLInputElement, extras: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {
     const fileInput = <HTMLInputElement>document.getElementById("hiddenFile")!;
     file.onclick = () => {
         fileInput.click();
@@ -169,7 +171,7 @@ const NewImageObject = (src: string, height: number, width: number) => {
     const heightScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / height;
     const widthScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / width;
     const scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-    return { src: src, leftMM: DEFAULT_IMAGE_OFFSET_MM, topMM: DEFAULT_IMAGE_OFFSET_MM, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF };
+    return { src: src, leftMM: DEFAULT_IMAGE_OFFSET_MM, topMM: DEFAULT_IMAGE_OFFSET_MM, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF, rotation: 0 };
 }
 const UpdateImages = (canvas: CanvasRenderingContext2D) => { //Need to work on speed, since currently it is very slow
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
@@ -183,27 +185,70 @@ const UpdateImages = (canvas: CanvasRenderingContext2D) => { //Need to work on s
         
         img.onload = () => {
             let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF * ZOOM, imageObject.topMM * MM_PX_SF * ZOOM];
-            let [imageHeight, imageWidth] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
-            canvas.drawImage(img, imageX, imageY, imageWidth, imageHeight); //image size is constant, but changes with canvas for some reason
+            const [originalImageHeight, originalImageWidth] = [img.naturalHeight, img.naturalWidth]
+            let [imageHeightPXVisible, imageWidthVisible] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
+            const [heightScale, widthScale] = [imageHeightPXVisible / originalImageHeight, imageWidthVisible / originalImageWidth]
+
+            drawImage(canvas, img, imageX, imageY, originalImageHeight, originalImageWidth, heightScale, widthScale, degreesToRadians(imageObject.rotation));
+            //canvas.drawImage(img, imageX, imageY, imageWidth, imageHeight); //old method, before rotation
         }
     }
 }
-const CanvasLoop = (canvas: CanvasRenderingContext2D) => { //This seems to work better than individually updating the canvas everytime there's a change, but there is still a bit of flickering
+const degreesToRadians = (degrees: number) => {
+    return degrees / (180 / Math.PI);
+}
+function drawImage(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, originalHeight: number, originalWidth: number, heightScale: number, widthScale: number, rotationRadians: number){ //Draw Rotated Image: https://stackoverflow.com/questions/17411991/html5-canvas-rotate-image
+    ctx.setTransform(heightScale, 0, 0, widthScale, x + originalWidth*widthScale / 2, y + originalHeight*heightScale / 2); // sets scale and origin
+    ctx.rotate(rotationRadians);
+    ctx.drawImage(image, -originalWidth / 2, -originalHeight / 2);
+    ctx.setTransform(1,0,0,1,0,0); // which is much quicker than save and restore
+} 
+
+
+
+const CheckForHover = (paper: HTMLCanvasElement) => {
+    const paperBoundingBox = paper.getBoundingClientRect();
+    let selectedImage: number | undefined = undefined;
+    for (let i = 0; i != IMAGES.length; i += 1) {
+        if (CheckIntersectionImage(MOUSE_X, MOUSE_Y, paperBoundingBox, i) == true) {
+            selectedImage = i;
+        }
+    }
+    return selectedImage;
+}
+const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, transformOverlay: HTMLElement) => { //This seems to work better than individually updating the canvas everytime there's a change, but there is still a bit of flickering
     setInterval(() => {
         if (UPDATE_CANVAS == true) {
             UpdateImages(canvas);
             UPDATE_CANVAS = false;
+        }
+
+        SELECTED_IMAGE_INDEX = CheckForHover(paper);
+        if (SELECTED_IMAGE_INDEX != undefined) { //display transform overlay over the image, it is purely for aesthetic
+            const img = IMAGES[SELECTED_IMAGE_INDEX];
+            const paperBoundingBox = paper.getBoundingClientRect();
+
+            const [left, top] = [paperBoundingBox.left + img.leftMM * MM_PX_SF * ZOOM, paperBoundingBox.top + img.topMM * MM_PX_SF * ZOOM];
+            const [height, width] = [img.heightMM * MM_PX_SF * ZOOM, img.widthMM * MM_PX_SF * ZOOM];
+
+            transformOverlay.style.visibility = "visible";
+            [transformOverlay.style.left, transformOverlay.style.top] = [`${left}px`, `${top}px`];
+            [transformOverlay.style.height, transformOverlay.style.width] = [`${height}px`, `${width}px`];
+
+            console.log(img.src)
+        }
+        else {
+            transformOverlay.style.visibility = "hidden";
         }
     }, 16);
 }
 
 
 
-
 const Main = () => {
     const [body, paper, taskbar] = [document.body, <HTMLCanvasElement>document.getElementById("paper")!, document.getElementById("taskbar")!];
     const [file, extras, print] = [<HTMLInputElement>document.getElementById("addImage")!, <HTMLInputElement>document.getElementById("extrasButton")!, <HTMLInputElement>document.getElementById("printButton")!]
-    const canvas = paper.getContext('2d')!;
+    const [canvas, transformOverlay, rotateButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!];
 
     IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 112.5, 200)); //for testing
 
@@ -211,10 +256,10 @@ const Main = () => {
     FormatPaper(paper);
     PositionPaper(paper);
 
-    InitMovementListeners(body, paper, canvas, taskbar);
-    InitTaskbarListeners(canvas, file, extras, print, paper);
+    InitPaperListeners(body, paper, rotateButton, taskbar);
+    InitTaskbarListeners(file, extras, print, paper);
 
-    CanvasLoop(canvas);
+    CanvasLoop(paper, canvas, transformOverlay);
 }
 
 Main();

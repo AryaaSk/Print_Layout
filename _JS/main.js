@@ -2,13 +2,14 @@
 const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
-const IMAGES = [];
+const IMAGES = []; //rotation in degrees
 const DEFAULT_IMAGE_OFFSET_MM = 5;
 const DEFAULT_IMAGE_SIZE_MM = 200;
 let UPDATE_CANVAS = false;
-const dpi = window.devicePixelRatio;
-const MM_PX_SF = 3 * dpi; //1mm = 3px * dpi
+const MM_PX_SF = 3 * window.devicePixelRatio; //1mm = 3px * dpi
 let ZOOM = 1;
+let [MOUSE_X, MOUSE_Y] = [0, 0];
+let SELECTED_IMAGE_INDEX = undefined;
 const FormatPaper = (paper) => {
     paper.setAttribute('height', String(PAPER_HEIGHT_MM * MM_PX_SF * ZOOM));
     paper.setAttribute('width', String(PAPER_WIDTH_MM * MM_PX_SF * ZOOM));
@@ -38,21 +39,13 @@ const CheckIntersectionImage = (x, y, paperBoundingBox, imageIndex) => {
     }
     return false;
 };
-const InitMovementListeners = (body, paper, canvas, taskbar) => {
+const InitPaperListeners = (body, paper, rotateButton, taskbar) => {
     let pointerDown = false;
-    let selectedImage = undefined;
     let [prevX, prevY] = [0, 0];
     body.onpointerdown = ($e) => {
-        selectedImage = undefined;
         const [x, y] = [$e.clientX, $e.clientY]; //check if pointer is above taskbar or any images, if so then doesn't count
         if (CheckIntersectionElement(x, y, taskbar) == true) {
             return;
-        }
-        const paperBoundingBox = paper.getBoundingClientRect();
-        for (let i = 0; i != IMAGES.length; i += 1) {
-            if (CheckIntersectionImage(x, y, paperBoundingBox, i) == true) {
-                selectedImage = i;
-            }
         }
         pointerDown = true;
         [prevX, prevY] = [$e.clientX, $e.clientY];
@@ -61,23 +54,30 @@ const InitMovementListeners = (body, paper, canvas, taskbar) => {
         pointerDown = false;
     };
     body.onpointermove = ($e) => {
+        [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
         if (pointerDown == false) {
             return;
         }
         const [currentX, currentY] = [$e.clientX, $e.clientY];
         const [deltaX, deltaY] = [currentX - prevX, currentY - prevY];
         [prevX, prevY] = [currentX, currentY];
-        if (selectedImage == undefined) {
+        if (SELECTED_IMAGE_INDEX == undefined) {
             PAPER_POSITION.left += deltaX;
             PAPER_POSITION.top += deltaY;
             PositionPaper(paper);
         }
         else {
-            const img = IMAGES[selectedImage];
+            //check if image is being scaled, if it is at the corners (within a certain radius)
+            const img = IMAGES[SELECTED_IMAGE_INDEX];
             img.leftMM += deltaX / MM_PX_SF / ZOOM; //applying the reverse to go from px -> mm
             img.topMM += deltaY / MM_PX_SF / ZOOM;
             UPDATE_CANVAS = true;
         }
+    };
+    rotateButton.onclick = () => {
+        const img = IMAGES[SELECTED_IMAGE_INDEX];
+        img.rotation += 90;
+        UPDATE_CANVAS = true;
     };
     body.onwheel = ($e) => {
         const damping = 1 / 400;
@@ -86,7 +86,7 @@ const InitMovementListeners = (body, paper, canvas, taskbar) => {
         SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
     };
 };
-const InitTaskbarListeners = (canvas, file, extras, print, paper) => {
+const InitTaskbarListeners = (file, extras, print, paper) => {
     const fileInput = document.getElementById("hiddenFile");
     file.onclick = () => {
         fileInput.click();
@@ -144,7 +144,7 @@ const NewImageObject = (src, height, width) => {
     const heightScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / height;
     const widthScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / width;
     const scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-    return { src: src, leftMM: DEFAULT_IMAGE_OFFSET_MM, topMM: DEFAULT_IMAGE_OFFSET_MM, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF };
+    return { src: src, leftMM: DEFAULT_IMAGE_OFFSET_MM, topMM: DEFAULT_IMAGE_OFFSET_MM, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF, rotation: 0 };
 };
 const UpdateImages = (canvas) => {
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
@@ -156,29 +156,65 @@ const UpdateImages = (canvas) => {
         img.src = imageObject.src;
         img.onload = () => {
             let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF * ZOOM, imageObject.topMM * MM_PX_SF * ZOOM];
-            let [imageHeight, imageWidth] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
-            canvas.drawImage(img, imageX, imageY, imageWidth, imageHeight); //image size is constant, but changes with canvas for some reason
+            const [originalImageHeight, originalImageWidth] = [img.naturalHeight, img.naturalWidth];
+            let [imageHeightPXVisible, imageWidthVisible] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
+            const [heightScale, widthScale] = [imageHeightPXVisible / originalImageHeight, imageWidthVisible / originalImageWidth];
+            drawImage(canvas, img, imageX, imageY, originalImageHeight, originalImageWidth, heightScale, widthScale, degreesToRadians(imageObject.rotation));
+            //canvas.drawImage(img, imageX, imageY, imageWidth, imageHeight); //old method, before rotation
         };
     }
 };
-const CanvasLoop = (canvas) => {
+const degreesToRadians = (degrees) => {
+    return degrees / (180 / Math.PI);
+};
+function drawImage(ctx, image, x, y, originalHeight, originalWidth, heightScale, widthScale, rotationRadians) {
+    ctx.setTransform(heightScale, 0, 0, widthScale, x + originalWidth * widthScale / 2, y + originalHeight * heightScale / 2); // sets scale and origin
+    ctx.rotate(rotationRadians);
+    ctx.drawImage(image, -originalWidth / 2, -originalHeight / 2);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // which is much quicker than save and restore
+}
+const CheckForHover = (paper) => {
+    const paperBoundingBox = paper.getBoundingClientRect();
+    let selectedImage = undefined;
+    for (let i = 0; i != IMAGES.length; i += 1) {
+        if (CheckIntersectionImage(MOUSE_X, MOUSE_Y, paperBoundingBox, i) == true) {
+            selectedImage = i;
+        }
+    }
+    return selectedImage;
+};
+const CanvasLoop = (paper, canvas, transformOverlay) => {
     setInterval(() => {
         if (UPDATE_CANVAS == true) {
             UpdateImages(canvas);
             UPDATE_CANVAS = false;
+        }
+        SELECTED_IMAGE_INDEX = CheckForHover(paper);
+        if (SELECTED_IMAGE_INDEX != undefined) { //display transform overlay over the image, it is purely for aesthetic
+            const img = IMAGES[SELECTED_IMAGE_INDEX];
+            const paperBoundingBox = paper.getBoundingClientRect();
+            const [left, top] = [paperBoundingBox.left + img.leftMM * MM_PX_SF * ZOOM, paperBoundingBox.top + img.topMM * MM_PX_SF * ZOOM];
+            const [height, width] = [img.heightMM * MM_PX_SF * ZOOM, img.widthMM * MM_PX_SF * ZOOM];
+            transformOverlay.style.visibility = "visible";
+            [transformOverlay.style.left, transformOverlay.style.top] = [`${left}px`, `${top}px`];
+            [transformOverlay.style.height, transformOverlay.style.width] = [`${height}px`, `${width}px`];
+            console.log(img.src);
+        }
+        else {
+            transformOverlay.style.visibility = "hidden";
         }
     }, 16);
 };
 const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper"), document.getElementById("taskbar")];
     const [file, extras, print] = [document.getElementById("addImage"), document.getElementById("extrasButton"), document.getElementById("printButton")];
-    const canvas = paper.getContext('2d');
+    const [canvas, transformOverlay, rotateButton] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("rotateButton")];
     IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 112.5, 200)); //for testing
     SizePaper(paper);
     FormatPaper(paper);
     PositionPaper(paper);
-    InitMovementListeners(body, paper, canvas, taskbar);
-    InitTaskbarListeners(canvas, file, extras, print, paper);
-    CanvasLoop(canvas);
+    InitPaperListeners(body, paper, rotateButton, taskbar);
+    InitTaskbarListeners(file, extras, print, paper);
+    CanvasLoop(paper, canvas, transformOverlay);
 };
 Main();
