@@ -4,7 +4,7 @@ const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
 
-const IMAGES: { src: string, leftMM: number, topMM: number, heightMM: number, widthMM: number, rotation: number }[] = []; //rotation in degrees
+const IMAGES: { src: string, leftMM: number, topMM: number, heightMM: number, widthMM: number }[] = []; //rotation in degrees
 const DEFAULT_IMAGE_OFFSET_MM = 5;
 const DEFAULT_IMAGE_SIZE_MM = 200;
 let UPDATE_CANVAS = false;
@@ -47,6 +47,25 @@ const CheckIntersectionImage = (x: number, y: number, paperBoundingBox: DOMRect,
     }
     return false;
 }
+function rotate90(src: any){
+    const promise = new Promise((resolve) => {
+        var img = new Image()
+        img.src = src
+        img.onload = function() { //https://stackoverflow.com/questions/26799037/is-it-possible-to-rotate-an-image-if-you-only-have-image-data-url-using-javascri
+            var canvas = document.createElement('canvas')!;
+            canvas.width = img.height
+            canvas.height = img.width
+            canvas.style.position = "absolute"
+            var ctx = canvas.getContext("2d")!;
+            ctx.translate(img.height, img.width / img.height)
+            ctx.rotate(Math.PI / 2)
+            ctx.drawImage(img, 0, 0)
+            resolve(canvas.toDataURL());
+        }
+    })
+    return promise;
+  }
+
 const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, taskbar: HTMLElement) => {
     let pointerDown = false;
     let [prevX, prevY] = [0, 0];
@@ -89,9 +108,11 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         }
     }
 
-    rotateButton.onclick = () => {
+    rotateButton.onclick = async () => {
         const img = IMAGES[SELECTED_IMAGE_INDEX!];
-        img.rotation += 90;
+        const rotatedBase64 = await rotate90(img.src); //just rotating the raw data, so that we don't have to worry about the rotation later on
+        img.src = <string>rotatedBase64;
+        [img.heightMM, img.widthMM] = [img.widthMM, img.heightMM]; //swap height and width since the image is rotated 90 degrees
         UPDATE_CANVAS = true;
     }
 
@@ -102,6 +123,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
     }
 }
+
 const InitTaskbarListeners = (file: HTMLInputElement, extras: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {
     const fileInput = <HTMLInputElement>document.getElementById("hiddenFile")!;
     file.onclick = () => {
@@ -131,11 +153,8 @@ const InitTaskbarListeners = (file: HTMLInputElement, extras: HTMLInputElement, 
         let width = paper.width; 
         let height = paper.height;
 
-        //set the orientation
-        const pdf = (width > height) ? new jsPDF('l', 'px', [width, height]) : new jsPDF('p', 'px', [height, width]);
-
-        //then we get the dimensions from the 'pdf' file itself
-        width = pdf.internal.pageSize.getWidth();
+        const pdf = (width > height) ? new jsPDF('l', 'px', [width, height]) : new jsPDF('p', 'px', [height, width]); //set the orientation
+        width = pdf.internal.pageSize.getWidth(); //then we get the dimensions from the 'pdf' file itself
         height = pdf.internal.pageSize.getHeight();
         pdf.addImage(paper, 'PNG', 0, 0,width,height);
         
@@ -167,11 +186,12 @@ const InitTaskbarListeners = (file: HTMLInputElement, extras: HTMLInputElement, 
 }
 
 
-const NewImageObject = (src: string, height: number, width: number) => {
+const NewImageObject = (src: string, height: number, width: number, leftMM?: number, topMM?: number) => {
     const heightScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / height;
     const widthScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / width;
     const scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-    return { src: src, leftMM: DEFAULT_IMAGE_OFFSET_MM, topMM: DEFAULT_IMAGE_OFFSET_MM, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF, rotation: 0 };
+    const [left, top] = [(leftMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : leftMM, (topMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : topMM]
+    return { src: src, leftMM: left, topMM: top, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF};
 }
 const UpdateImages = (canvas: CanvasRenderingContext2D) => { //Need to work on speed, since currently it is very slow
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
@@ -186,23 +206,13 @@ const UpdateImages = (canvas: CanvasRenderingContext2D) => { //Need to work on s
         img.onload = () => {
             let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF * ZOOM, imageObject.topMM * MM_PX_SF * ZOOM];
             const [originalImageHeight, originalImageWidth] = [img.naturalHeight, img.naturalWidth]
-            let [imageHeightPXVisible, imageWidthVisible] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
-            const [heightScale, widthScale] = [imageHeightPXVisible / originalImageHeight, imageWidthVisible / originalImageWidth]
+            let [imageHeightPXVisible, imageWidthPXVisible] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
+            const [heightScale, widthScale] = [imageHeightPXVisible / originalImageHeight, imageWidthPXVisible / originalImageWidth]
 
-            drawImage(canvas, img, imageX, imageY, originalImageHeight, originalImageWidth, heightScale, widthScale, degreesToRadians(imageObject.rotation));
-            //canvas.drawImage(img, imageX, imageY, imageWidth, imageHeight); //old method, before rotation
+            canvas.drawImage(img, imageX, imageY, imageWidthPXVisible, imageHeightPXVisible);
         }
     }
 }
-const degreesToRadians = (degrees: number) => {
-    return degrees / (180 / Math.PI);
-}
-function drawImage(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, originalHeight: number, originalWidth: number, heightScale: number, widthScale: number, rotationRadians: number){ //Draw Rotated Image: https://stackoverflow.com/questions/17411991/html5-canvas-rotate-image
-    ctx.setTransform(heightScale, 0, 0, widthScale, x + originalWidth*widthScale / 2, y + originalHeight*heightScale / 2); // sets scale and origin
-    ctx.rotate(rotationRadians);
-    ctx.drawImage(image, -originalWidth / 2, -originalHeight / 2);
-    ctx.setTransform(1,0,0,1,0,0); // which is much quicker than save and restore
-} 
 
 
 
@@ -234,8 +244,6 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
             transformOverlay.style.visibility = "visible";
             [transformOverlay.style.left, transformOverlay.style.top] = [`${left}px`, `${top}px`];
             [transformOverlay.style.height, transformOverlay.style.width] = [`${height}px`, `${width}px`];
-
-            console.log(img.src)
         }
         else {
             transformOverlay.style.visibility = "hidden";

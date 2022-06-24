@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
@@ -39,6 +48,24 @@ const CheckIntersectionImage = (x, y, paperBoundingBox, imageIndex) => {
     }
     return false;
 };
+function rotate90(src) {
+    const promise = new Promise((resolve) => {
+        var img = new Image();
+        img.src = src;
+        img.onload = function () {
+            var canvas = document.createElement('canvas');
+            canvas.width = img.height;
+            canvas.height = img.width;
+            canvas.style.position = "absolute";
+            var ctx = canvas.getContext("2d");
+            ctx.translate(img.height, img.width / img.height);
+            ctx.rotate(Math.PI / 2);
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL());
+        };
+    });
+    return promise;
+}
 const InitPaperListeners = (body, paper, rotateButton, taskbar) => {
     let pointerDown = false;
     let [prevX, prevY] = [0, 0];
@@ -74,11 +101,13 @@ const InitPaperListeners = (body, paper, rotateButton, taskbar) => {
             UPDATE_CANVAS = true;
         }
     };
-    rotateButton.onclick = () => {
+    rotateButton.onclick = () => __awaiter(void 0, void 0, void 0, function* () {
         const img = IMAGES[SELECTED_IMAGE_INDEX];
-        img.rotation += 90;
+        const rotatedBase64 = yield rotate90(img.src); //just rotating the raw data, so that we don't have to worry about the rotation later on
+        img.src = rotatedBase64;
+        [img.heightMM, img.widthMM] = [img.widthMM, img.heightMM]; //swap height and width since the image is rotated 90 degrees
         UPDATE_CANVAS = true;
-    };
+    });
     body.onwheel = ($e) => {
         const damping = 1 / 400;
         const zoomFactor = $e.deltaY * damping;
@@ -110,10 +139,8 @@ const InitTaskbarListeners = (file, extras, print, paper) => {
     print.onclick = () => {
         let width = paper.width;
         let height = paper.height;
-        //set the orientation
-        const pdf = (width > height) ? new jsPDF('l', 'px', [width, height]) : new jsPDF('p', 'px', [height, width]);
-        //then we get the dimensions from the 'pdf' file itself
-        width = pdf.internal.pageSize.getWidth();
+        const pdf = (width > height) ? new jsPDF('l', 'px', [width, height]) : new jsPDF('p', 'px', [height, width]); //set the orientation
+        width = pdf.internal.pageSize.getWidth(); //then we get the dimensions from the 'pdf' file itself
         height = pdf.internal.pageSize.getHeight();
         pdf.addImage(paper, 'PNG', 0, 0, width, height);
         const prevZoom = ZOOM;
@@ -140,11 +167,12 @@ const InitTaskbarListeners = (file, extras, print, paper) => {
         }, 1000);
     };
 };
-const NewImageObject = (src, height, width) => {
+const NewImageObject = (src, height, width, leftMM, topMM) => {
     const heightScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / height;
     const widthScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / width;
     const scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-    return { src: src, leftMM: DEFAULT_IMAGE_OFFSET_MM, topMM: DEFAULT_IMAGE_OFFSET_MM, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF, rotation: 0 };
+    const [left, top] = [(leftMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : leftMM, (topMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : topMM];
+    return { src: src, leftMM: left, topMM: top, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF };
 };
 const UpdateImages = (canvas) => {
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
@@ -157,22 +185,12 @@ const UpdateImages = (canvas) => {
         img.onload = () => {
             let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF * ZOOM, imageObject.topMM * MM_PX_SF * ZOOM];
             const [originalImageHeight, originalImageWidth] = [img.naturalHeight, img.naturalWidth];
-            let [imageHeightPXVisible, imageWidthVisible] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
-            const [heightScale, widthScale] = [imageHeightPXVisible / originalImageHeight, imageWidthVisible / originalImageWidth];
-            drawImage(canvas, img, imageX, imageY, originalImageHeight, originalImageWidth, heightScale, widthScale, degreesToRadians(imageObject.rotation));
-            //canvas.drawImage(img, imageX, imageY, imageWidth, imageHeight); //old method, before rotation
+            let [imageHeightPXVisible, imageWidthPXVisible] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
+            const [heightScale, widthScale] = [imageHeightPXVisible / originalImageHeight, imageWidthPXVisible / originalImageWidth];
+            canvas.drawImage(img, imageX, imageY, imageWidthPXVisible, imageHeightPXVisible);
         };
     }
 };
-const degreesToRadians = (degrees) => {
-    return degrees / (180 / Math.PI);
-};
-function drawImage(ctx, image, x, y, originalHeight, originalWidth, heightScale, widthScale, rotationRadians) {
-    ctx.setTransform(heightScale, 0, 0, widthScale, x + originalWidth * widthScale / 2, y + originalHeight * heightScale / 2); // sets scale and origin
-    ctx.rotate(rotationRadians);
-    ctx.drawImage(image, -originalWidth / 2, -originalHeight / 2);
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // which is much quicker than save and restore
-}
 const CheckForHover = (paper) => {
     const paperBoundingBox = paper.getBoundingClientRect();
     let selectedImage = undefined;
@@ -198,7 +216,6 @@ const CanvasLoop = (paper, canvas, transformOverlay) => {
             transformOverlay.style.visibility = "visible";
             [transformOverlay.style.left, transformOverlay.style.top] = [`${left}px`, `${top}px`];
             [transformOverlay.style.height, transformOverlay.style.width] = [`${height}px`, `${width}px`];
-            console.log(img.src);
         }
         else {
             transformOverlay.style.visibility = "hidden";
