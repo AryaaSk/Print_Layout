@@ -60,11 +60,9 @@ UPDATE_CANVAS = true;
                         printController.showsPaperSelectionForLoadedPapers = true
                         
                         let printInfo = UIPrintInfo.printInfo()
-                        printInfo.outputType = .general //dont want to set to .photo since that doesnt allow A4 papers (I can't find out how to change it)
+                        printInfo.outputType = .photo //don't need to worry about paper sizes, since it changes automatically based on the printer
                         printController.printInfo = printInfo
-                        
-                        let printFormatter = UIPrintFormatter();
-                        printFormatter.perPageContentInsets = UIEdgeInsets(top: -20, left: -20, bottom: -20, right: -20) //I cant seem to get rid of the border around the photo
+                        printInfo.duplex = .none
                         
                         printController.present(animated: true)
                     }
