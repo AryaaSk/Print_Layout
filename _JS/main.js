@@ -146,9 +146,12 @@ const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, delet
         const newImage = JSON.parse(JSON.stringify(IMAGES[SELECTED_IMAGE_INDEX]));
         newImage.leftMM += DEFAULT_IMAGE_OFFSET_MM;
         newImage.topMM += DEFAULT_IMAGE_OFFSET_MM;
+        console.log(newImage);
         IMAGES.push(newImage);
         SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it will go to the duplicated image.
         UPDATE_CANVAS = true;
+    };
+    document.onpaste = () => {
     };
 };
 const InitTaskbarListeners = (body, file, extras, print, paper) => {

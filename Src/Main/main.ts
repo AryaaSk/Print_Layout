@@ -101,6 +101,8 @@ const CheckForHover = (paper: HTMLCanvasElement) => {
     return selectedImage;
 }
 
+
+
 function rotate90(src: any){ //https://stackoverflow.com/questions/26799037/is-it-possible-to-rotate-an-image-if-you-only-have-image-data-url-using-javascri
     const promise = new Promise((resolve) => {
         var img = new Image()
@@ -122,6 +124,8 @@ function rotate90(src: any){ //https://stackoverflow.com/questions/26799037/is-i
 const distanceBetween = (p1: number[], p2: number[]) => {
     return Math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2);
 }
+
+
 
 const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, bringForwardButton: HTMLInputElement, deleteButton: HTMLInputElement, duplicateButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
     if (isMobile == false) {
@@ -158,9 +162,14 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         newImage.leftMM += DEFAULT_IMAGE_OFFSET_MM;
         newImage.topMM += DEFAULT_IMAGE_OFFSET_MM;
 
+        console.log(newImage)
+
         IMAGES.push(newImage);
         SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it will go to the duplicated image.
         UPDATE_CANVAS = true;
+    }
+
+    document.onpaste = () => { //paste image
     }
 }
 

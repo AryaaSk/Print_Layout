@@ -15,7 +15,6 @@ const initDesktopControls = (body, paper, resizeElements, taskbar) => {
             const radiusPX = TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI;
             const [topLeftBoundingBox, topRightBoundingBox, bottomLeftBoundingBox, bottomRightBoundingBox] = [resizeElements.topLeftResizeElement.getBoundingClientRect(), resizeElements.topRightResizeElement.getBoundingClientRect(), resizeElements.bottomLeftResizeElement.getBoundingClientRect(), resizeElements.bottomRightResizeElement.getBoundingClientRect()];
             const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [[topLeftBoundingBox.left + radiusPX, topLeftBoundingBox.top + radiusPX], [topRightBoundingBox.left + radiusPX, topRightBoundingBox.top + radiusPX], [bottomLeftBoundingBox.left + radiusPX, bottomLeftBoundingBox.top + radiusPX], [bottomRightBoundingBox.left + radiusPX, bottomRightBoundingBox.top + radiusPX]];
-            console.log(mousePosition, bottomRightResize);
             holdingResize = undefined;
             if (distanceBetween(topLeftResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) { //calculate new distance between mouse position and bottom left, and resize based on that
                 holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topLeft" };
