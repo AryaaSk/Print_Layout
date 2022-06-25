@@ -22,6 +22,13 @@ const TRANSFORM_OVERLAY_RESIZE_RADIUS = 15;
 let [MOUSE_X, MOUSE_Y] = [0, 0];
 let SELECTED_IMAGE_INDEX = undefined;
 let UPDATE_CANVAS = false;
+const InitHTML = (taskbar) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hideTaskbar = urlParams.get('hideTaskbar');
+    if (hideTaskbar == "true") {
+        taskbar.style.display = "none";
+    }
+};
 const FitToScreen = () => {
     //paper's size in mm should stay the same, however we can change the MM_PX_SF
     const heightSF = (window.innerHeight - DEFAULT_PAPER_MARGIN_PX) / PAPER_HEIGHT_MM;
@@ -240,6 +247,7 @@ const Main = () => {
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize"), document.getElementById("topRightResize"), document.getElementById("bottomLeftResize"), document.getElementById("bottomRightResize")];
     IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
+    InitHTML(taskbar);
     FitToScreen();
     SizePaper(paper);
     PositionPaper(paper);

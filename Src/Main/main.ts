@@ -19,7 +19,13 @@ let SELECTED_IMAGE_INDEX: number | undefined = undefined;
 let UPDATE_CANVAS = false;
 
 
-
+const InitHTML = (taskbar: HTMLElement) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hideTaskbar = urlParams.get('hideTaskbar')!;
+    if (hideTaskbar == "true") {
+        taskbar.style.display = "none";
+    }
+}
 const FitToScreen = () => {
     //paper's size in mm should stay the same, however we can change the MM_PX_SF
     const heightSF = (window.innerHeight - DEFAULT_PAPER_MARGIN_PX) / PAPER_HEIGHT_MM;
@@ -27,6 +33,7 @@ const FitToScreen = () => {
     MM_PX_SF = (heightSF < widthSF) ? heightSF : widthSF;
     UPDATE_CANVAS = true;
 }
+
 const SizePaper = (paper: HTMLElement) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
@@ -282,6 +289,7 @@ const Main = () => {
     IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
 
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
+    InitHTML(taskbar);
     FitToScreen();
 
     SizePaper(paper);
