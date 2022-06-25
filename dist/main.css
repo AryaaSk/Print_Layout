@@ -1,0 +1,141 @@
+body {
+    background-color: #011F34;
+    display: grid;
+    place-content: center;
+    overflow: hidden;
+    padding: 0;
+
+    --taskbarBorderRadius: 10px;
+    --resizeCounterRadius: 15px;
+}
+.noSelect {
+    -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none; /* Safari */
+       -khtml-user-select: none; /* Konqueror HTML */
+         -moz-user-select: none; /* Old versions of Firefox */
+          -ms-user-select: none; /* Internet Explorer/Edge */
+              user-select: none; /* Non-prefixed version, currently
+                                    supported by Chrome, Edge, Opera and Firefox */
+}
+
+
+#paper {
+    /* Size and position set dynamically in JS (different paper sizes), for now will just make A4 */
+    position: relative;
+    left: 0;
+    top: 0;
+    padding: 0;
+
+    background-color: white;
+    padding: 0;
+    margin: 0;
+    image-rendering: optimizeSpeed;
+}
+
+#transformOverlay {
+    /* Overlays when user hovers on an element, thus size and position are set dynamically */
+    position: fixed;
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+    box-sizing: border-box;         /* Opera/IE 8+ */
+    padding: 0;
+
+    background-color: transparent;
+    border: 5px solid #c4c4c4;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.imageButton {
+    height: 50px;
+    width: 50px;
+    margin: 5px;
+    padding: 0;
+
+    background-color: white;
+    font-size: xx-large;
+}
+#delete {
+    font-size: x-large;
+    color: red;
+}
+
+.resizeCounter {
+    position: absolute;
+    height: calc(var(--resizeCounterRadius) * 2);
+    width: calc(var(--resizeCounterRadius) * 2);
+    border-radius: 50%;
+
+    background-color: white;
+    border: 1px solid black;
+}
+.resizeCounter:hover {
+    cursor: nwse-resize;
+}
+.opposite:hover {
+    cursor: nesw-resize;
+}
+#topLeftResize {
+    left: calc(var(--resizeCounterRadius) * -1);
+    top: calc(var(--resizeCounterRadius) * -1);
+}
+#topRightResize {
+    right: calc(var(--resizeCounterRadius) * -1);
+    top: calc(var(--resizeCounterRadius) * -1);
+}
+#bottomLeftResize {
+    left: calc(var(--resizeCounterRadius) * -1);
+    bottom: calc(var(--resizeCounterRadius) * -1);
+}
+#bottomRightResize {
+    right: calc(var(--resizeCounterRadius) * -1);
+    bottom: calc(var(--resizeCounterRadius) * -1);
+}
+
+
+
+#taskbar {
+    position: fixed;
+    left: calc(50% - 200px);
+    right: calc(50% - 200px);
+    bottom: 50px;
+
+    height: 60px;
+    width: 400px;
+
+    display: grid;
+    grid-template-columns: 33% 34% 33%;
+    grid-template-rows: 100%;
+    place-items: center;
+
+    background-color: #000000;
+    border-radius: var(--taskbarBorderRadius);
+    z-index: 1;
+    transform: translate3d(0, 0, 0);
+}
+
+.taskbarButton {
+    height: 100%;
+    width: 100%;
+
+    border: none;
+    background-color: transparent;
+}
+.taskbarButton:hover{
+    background-color: #212121;
+    transition: 500ms background-color;
+}
+.taskbarButton:first-of-type {
+    border-top-left-radius: var(--taskbarBorderRadius);
+    border-bottom-left-radius: var(--taskbarBorderRadius);
+}
+.taskbarButton:last-of-type {
+    border-top-right-radius: var(--taskbarBorderRadius);
+    border-bottom-right-radius: var(--taskbarBorderRadius);
+}
+.taskBarButtonImage {
+    max-height: 45%;
+    max-width: 45%;
+}

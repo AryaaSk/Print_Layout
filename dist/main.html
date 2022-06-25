@@ -1,0 +1,36 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Layout</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.1/jspdf.debug.js"></script>
+    <script src="main.js" defer></script>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body class="noSelect" ontouchstart>
+
+    <canvas id="paper"></canvas>
+
+    <div id="transformOverlay">
+        <div class="resizeCounter" id="topLeftResize"></div>
+        <div class="resizeCounter opposite" id="topRightResize"></div>
+        <div class="resizeCounter opposite" id="bottomLeftResize"></div>
+        <div class="resizeCounter" id="bottomRightResize"></div>
+
+        <button class="imageButton" id="rotateButton">⟳</button>
+        <button class="imageButton" id="bringForward">&#x2398</button>
+        <button class="imageButton" id="delete">⌫</button>
+    </div>
+
+    <div id="taskbar">
+        <button class="taskbarButton" id="addImage"><img src="Plus.svg" class="taskBarButtonImage" draggable="false" alt="Add Image"></button>
+        <button class="taskbarButton" id="extrasButton"><img src="Extras.svg" class="taskBarButtonImage" draggable="false" alt="Extras"></button>
+        <button class="taskbarButton" id="printButton"><img src="Printer.svg" class="taskBarButtonImage" draggable="false" alt="Print"></button>
+    </div>
+
+    <input type="file" id="hiddenFile" accept="image/png, image/jpeg" multiple="multiple" style="display: none;"> <!-- To trigger file upload when user clicks on add image button: https://stackoverflow.com/questions/10798761/how-to-link-an-input-button-to-a-file-select-window -->
+
+</body>
+</html>
