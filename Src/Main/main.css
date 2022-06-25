@@ -5,6 +5,7 @@ body {
     overflow: hidden;
 
     --taskbarBorderRadius: 10px;
+    --resizeCounterRadius: 15px;
 }
 
 
@@ -40,6 +41,24 @@ body {
     background-color: white;
     font-size: xx-large;
 }
+.resizeCounter {
+    position: absolute;
+    height: calc(var(--resizeCounterRadius) * 2);
+    width: calc(var(--resizeCounterRadius) * 2);
+    border-radius: 50%;
+
+    background-color: white;
+    border: 1px solid black;
+}
+#topLeftResize {
+    left: calc(var(--resizeCounterRadius) * -1);
+    top: calc(var(--resizeCounterRadius) * -1);
+}
+#bottomRightResize {
+    right: calc(var(--resizeCounterRadius) * -1);
+    bottom: calc(var(--resizeCounterRadius) * -1);
+}
+
 
 
 #taskbar {

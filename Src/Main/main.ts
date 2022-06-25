@@ -3,13 +3,15 @@ declare const jsPDF: any;
 const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
+let UPDATE_CANVAS = false;
 
 const IMAGES: { src: string, leftMM: number, topMM: number, heightMM: number, widthMM: number }[] = []; //rotation in degrees
 const DEFAULT_IMAGE_OFFSET_MM = 5;
 const DEFAULT_IMAGE_SIZE_MM = 200;
-let UPDATE_CANVAS = false;
+const TRANSFORM_OVERLAY_RESIZE_RADIUS = 15;
 
-const MM_PX_SF = 3 * window.devicePixelRatio; //1mm = 3px * dpi
+const DPI = window.devicePixelRatio;
+const MM_PX_SF = 3 * DPI; //1mm = 3px * dpi
 let ZOOM = 1;
 
 let [MOUSE_X, MOUSE_Y] = [0, 0];
@@ -47,11 +49,12 @@ const CheckIntersectionImage = (x: number, y: number, paperBoundingBox: DOMRect,
     }
     return false;
 }
-function rotate90(src: any){
+
+function rotate90(src: any){ //https://stackoverflow.com/questions/26799037/is-it-possible-to-rotate-an-image-if-you-only-have-image-data-url-using-javascri
     const promise = new Promise((resolve) => {
         var img = new Image()
         img.src = src
-        img.onload = function() { //https://stackoverflow.com/questions/26799037/is-it-possible-to-rotate-an-image-if-you-only-have-image-data-url-using-javascri
+        img.onload = function() {
             var canvas = document.createElement('canvas')!;
             canvas.width = img.height
             canvas.height = img.width
@@ -64,11 +67,17 @@ function rotate90(src: any){
         }
     })
     return promise;
-  }
+}
+const distanceBetween = (p1: number[], p2: number[]) => {
+    return Math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2);
+}
 
-const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, taskbar: HTMLElement) => {
+const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, topLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement, taskbar: HTMLElement) => {
     let pointerDown = false;
     let [prevX, prevY] = [0, 0];
+
+    let holdingResize: { imageIndex: number, corner: string } | undefined = undefined;
+    let oppositeCorner: number[] = [0, 0]; //[left, top]
 
     body.onpointerdown = ($e) => {
         const [x, y] = [$e.clientX, $e.clientY]; //check if pointer is above taskbar or any images, if so then doesn't count
@@ -78,6 +87,25 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
 
         pointerDown = true;
         [prevX, prevY] = [$e.clientX, $e.clientY];
+
+        if (SELECTED_IMAGE_INDEX != undefined) {
+            const mousePosition = [MOUSE_X, MOUSE_Y];
+            const radiusPX = TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI;
+            const [topLeftBoundingBox, bottomLeftBoundingBox] = [topLeftResizeElement.getBoundingClientRect(), bottomRightResizeElement.getBoundingClientRect()];
+            const [topLeftResize, bottomLeftResize] = [[topLeftBoundingBox.left + radiusPX, topLeftBoundingBox.top + radiusPX], [bottomLeftBoundingBox.left + radiusPX, bottomLeftBoundingBox.top + radiusPX]];
+
+            holdingResize = undefined;
+            if (distanceBetween(topLeftResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) { //calculate new distance between mouse position and bottom left, and resize based on that
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topLeft" };
+                oppositeCorner = [bottomLeftResize[0] + radiusPX, bottomLeftResize[1] + radiusPX];
+            }
+            else if (distanceBetween(bottomLeftResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) {
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomRight" };
+                oppositeCorner = [topLeftResize[0] + radiusPX, topLeftResize[1] + radiusPX];
+            }
+        }
+
+
     }
     body.onpointerup = () => {
         pointerDown = false;
@@ -89,22 +117,40 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             return;
         }
 
-        const [currentX, currentY] = [$e.clientX, $e.clientY];
-        const [deltaX, deltaY] = [currentX - prevX, currentY - prevY];
-        [prevX, prevY] = [currentX, currentY];
+        if (holdingResize != undefined) { //there could be no selected image, because the user is not hovering over the image anymore
+            const img = IMAGES[holdingResize.imageIndex];
 
-        if (SELECTED_IMAGE_INDEX == undefined) {
-            PAPER_POSITION.left += deltaX;
-            PAPER_POSITION.top += deltaY;
-            PositionPaper(paper);
-        }
-        else {
-            //check if image is being scaled, if it is at the corners (within a certain radius)
-            
-            const img = IMAGES[SELECTED_IMAGE_INDEX];
-            img.leftMM += deltaX / MM_PX_SF / ZOOM; //applying the reverse to go from px -> mm
-            img.topMM += deltaY / MM_PX_SF/ ZOOM;
+            let [newWidthPX, newHeightPX] = (holdingResize.corner == "topLeft") ? [oppositeCorner[0] - MOUSE_X, oppositeCorner[1] - MOUSE_Y] : [MOUSE_X - oppositeCorner[0], MOUSE_Y - oppositeCorner[1]];
+            const [newWidthMM, newHeightMM] = [newWidthPX / MM_PX_SF / ZOOM, newHeightPX / MM_PX_SF / ZOOM];
+
+            const heightSF = newHeightMM / img.heightMM;
+            const widthSF = newWidthMM / img.widthMM;
+            const SF = (heightSF < widthSF) ? heightSF : widthSF;
+
+            const [widthDifferenceMM, heightDifferenceMM] = (holdingResize.corner == "topLeft") ? [img.widthMM - (img.widthMM * SF), img.heightMM - (img.heightMM * SF)] : [0, 0];
+
+            img.heightMM *= SF;
+            img.widthMM *= SF;
+            img.leftMM += widthDifferenceMM;
+            img.topMM += heightDifferenceMM;
             UPDATE_CANVAS = true;
+        }
+
+        else {
+            const [deltaX, deltaY] = [MOUSE_X - prevX, MOUSE_Y - prevY];
+            [prevX, prevY] = [MOUSE_X, MOUSE_Y];
+
+            if (SELECTED_IMAGE_INDEX == undefined) {
+                PAPER_POSITION.left += deltaX;
+                PAPER_POSITION.top += deltaY;
+                PositionPaper(paper);
+            }
+            else {
+                const img = IMAGES[SELECTED_IMAGE_INDEX];
+                img.leftMM += deltaX / MM_PX_SF / ZOOM; //applying the reverse to go from px -> mm
+                img.topMM += deltaY / MM_PX_SF/ ZOOM;
+                UPDATE_CANVAS = true;
+            }
         }
     }
 
@@ -273,15 +319,17 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
 const Main = () => {
     const [body, paper, taskbar] = [document.body, <HTMLCanvasElement>document.getElementById("paper")!, document.getElementById("taskbar")!];
     const [file, extras, print] = [<HTMLInputElement>document.getElementById("addImage")!, <HTMLInputElement>document.getElementById("extrasButton")!, <HTMLInputElement>document.getElementById("printButton")!]
-    const [canvas, transformOverlay, rotateButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!];
+    const [canvas, transformOverlay, rotateButton, topLeftResize, bottomRightResize] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!, document.getElementById("topLeftResize")!, document.getElementById("bottomRightResize")!];
 
-    //IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
+    IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
+
+    body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
 
     SizePaper(paper);
     FormatPaper(paper);
     PositionPaper(paper);
 
-    InitPaperListeners(body, paper, rotateButton, taskbar);
+    InitPaperListeners(body, paper, rotateButton, topLeftResize, bottomRightResize, taskbar);
     InitTaskbarListeners(file, extras, print, paper);
 
     CanvasLoop(paper, canvas, transformOverlay);

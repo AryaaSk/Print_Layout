@@ -10,6 +10,10 @@ Here are a few links to handle the 'Open With' feature of iOS:
 - https://stackoverflow.com/questions/69926336/how-to-handle-a-file-shared-from-another-app-to-my-own-ios-app
 - https://stackoverflow.com/questions/49154366/how-to-handle-a-file-sent-with-open-in-from-another-app-to-my-own-ios-app
 
+Here are a few links to load a UIImage into a Website with Webkit:
+- https://stackoverflow.com/questions/38743604/wkwebview-insert-uiimage-into-web-page
+- https://stackoverflow.com/questions/24049343/call-javascript-function-from-native-code-in-wkwebview
+
 ## Design
 I want this app to be very minimal and fast, so the design is meant to look very clean. For example I'll try to only keep a few buttons in sight, the pan and zoom will just be control by mouse/gesture and scroll/pinch for desktop/mobile.
 
