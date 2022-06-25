@@ -88,10 +88,10 @@ const distanceBetween = (p1, p2) => {
 };
 const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, deleteButton, resizeElements, taskbar) => {
     if (isMobile == false) {
-        initDesktopControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomLeftResizeElement }, taskbar);
+        initDesktopControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomRightResizeElement }, taskbar);
     }
     else {
-        initMobileControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomLeftResizeElement }, taskbar);
+        initMobileControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomRightResizeElement }, taskbar);
     }
     rotateButton.onclick = () => __awaiter(void 0, void 0, void 0, function* () {
         const img = IMAGES[SELECTED_IMAGE_INDEX];

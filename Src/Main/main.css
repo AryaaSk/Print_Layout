@@ -132,16 +132,6 @@ body {
     background-color: transparent;
     transition: 500ms background-color;
 }
-@media (hover: none) {
-    .taskbarButton:active {
-        background-color: #212121;    
-    }
-}
-@media not (hover: none) {
-    .taskbarButton:hover{
-        background-color: #212121;
-    }
-}
 .taskbarButton:first-of-type {
     border-top-left-radius: var(--taskbarBorderRadius);
     border-bottom-left-radius: var(--taskbarBorderRadius);
@@ -153,4 +143,23 @@ body {
 .taskBarButtonImage {
     max-height: 45%;
     max-width: 45%;
+}
+
+
+
+@media (hover: none) { /* Mobile Specific */
+    #taskbar {
+        bottom: 20px;
+    }
+
+    .taskbarButton:active {
+        background-color: #212121;    
+    }
+}
+
+
+@media not (hover: none) { /* Desktop Specific */
+    .taskbarButton:hover{
+        background-color: #212121;
+    }
 }
