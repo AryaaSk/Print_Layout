@@ -34,26 +34,28 @@ const FitToScreen = () => {
     UPDATE_CANVAS = true;
 }
 
-const syncWait = (ms: number) => { //https://stackoverflow.com/questions/6921895/synchronous-delay-in-code-execution
-    const end = Date.now() + ms
-    while (Date.now() < end) continue;
-}
 function GetCanvasBase64Encoded() { //for iOS, which is why it is using the global variables instead of taking them in as HTMLElements
-    const body = document.body;
     const paper = <HTMLCanvasElement>document.getElementById("paper")!;
 
-    const prevZoom = ZOOM;
+    const base64EncodedString = paper.toDataURL();
+    return base64EncodedString.slice(22, base64EncodedString.length);
+}
+function enlargeCanvas() { //again made for iOS app, not to be used in normal web app
+    const body = document.body;
+    const paper = <HTMLCanvasElement>document.getElementById("paper")!;
+    const previousZoom = ZOOM;
     ZOOM = 8;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "none");
-    
-    const base64EncodedString = paper.toDataURL(); //it seems like I dont even need the wait, so the user doesnt have to see the screen zoom in
-
+    return previousZoom;
+};
+function revertCanvas(prevZoom: number) { //also made for iOS app
+    const body = document.body;
+    const paper = <HTMLCanvasElement>document.getElementById("paper")!;
     ZOOM = prevZoom;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "all");
-
-    return base64EncodedString.slice(22, base64EncodedString.length);
+    console.log("reverted");
 }
 
 const SizePaper = (paper: HTMLElement) => {

@@ -38,18 +38,28 @@ UPDATE_CANVAS = true;
     }
     
     @IBAction func printImage(_ sender: Any) { //get canvas as image using .toDataURL(), then decode in swift, and give to user to print
-        let getCanvasBase64 = """
-GetCanvasBase64Encoded();
-"""
-            
-        webView.evaluate(script: getCanvasBase64) { data, error in
-            let base64 = data! as! String
-            
-            if let decodedData = Data(base64Encoded: base64, options: .ignoreUnknownCharacters) {
-                let image = UIImage(data: decodedData)!
-                
-                //now just print the image
-                
+        webView.evaluate(script: "enlargeCanvas();") { prevZoom, _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { //wait 2 seconds, similar to setTimeout(() => {}, 2000); in JS
+                self.webView.evaluate(script: "GetCanvasBase64Encoded();") { data, error in
+                    self.webView.evaluateJavaScript("revertCanvas(\(prevZoom!))")
+                    
+                    let base64 = data! as! String
+                    
+                    if let decodedData = Data(base64Encoded: base64, options: .ignoreUnknownCharacters) {
+                        let image = UIImage(data: decodedData)!
+
+                        //now just print the image
+                        let printController = UIPrintInteractionController.shared
+                        printController.printingItem = image
+                        printController.showsPaperSelectionForLoadedPapers = true
+                        
+                        let printInfo = UIPrintInfo.printInfo()
+                        printInfo.outputType = .photo
+                        printController.printInfo = printInfo
+                        
+                        printController.present(animated: true)
+                    }
+                }
             }
         }
     }

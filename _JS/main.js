@@ -36,23 +36,28 @@ const FitToScreen = () => {
     MM_PX_SF = (heightSF < widthSF) ? heightSF : widthSF;
     UPDATE_CANVAS = true;
 };
-const syncWait = (ms) => {
-    const end = Date.now() + ms;
-    while (Date.now() < end)
-        continue;
-};
 function GetCanvasBase64Encoded() {
+    const paper = document.getElementById("paper");
+    const base64EncodedString = paper.toDataURL();
+    return base64EncodedString.slice(22, base64EncodedString.length);
+}
+function enlargeCanvas() {
     const body = document.body;
     const paper = document.getElementById("paper");
-    const prevZoom = ZOOM;
+    const previousZoom = ZOOM;
     ZOOM = 8;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "none");
-    const base64EncodedString = paper.toDataURL(); //it seems like I dont even need the wait, so the user doesnt have to see the screen zoom in
+    return previousZoom;
+}
+;
+function revertCanvas(prevZoom) {
+    const body = document.body;
+    const paper = document.getElementById("paper");
     ZOOM = prevZoom;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "all");
-    return base64EncodedString.slice(22, base64EncodedString.length);
+    console.log("reverted");
 }
 const SizePaper = (paper) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
