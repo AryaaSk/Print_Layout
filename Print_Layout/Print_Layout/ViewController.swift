@@ -8,7 +8,7 @@
 import UIKit
 import WebKit
 
-class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate  {
+class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
     
     @IBOutlet var webView: WKWebView!
     override func viewDidLoad() {
@@ -22,9 +22,12 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate  {
         webView.load(request)
     }
     
+    
+    
     @IBAction func newImage(_ sender: Any) { //take UIImage from local device, and upload into program with the base64 encoded string.
         ImagePickerManager().pickImage(self){ image in
-            let imageData = image.jpegData(compressionQuality: 0.7)!;
+            
+            let imageData = image.jpegData(compressionQuality: 0.8)!;
             let imageSrc = "data:image/png;base64, " + imageData.base64EncodedString()
             let height = Int(image.size.height * image.scale)
             let width = Int(image.size.width * image.scale)
@@ -36,6 +39,8 @@ UPDATE_CANVAS = true;
             self.webView.evaluateJavaScript(jsCode)
         }
     }
+    
+    
     
     @IBAction func printImage(_ sender: Any) { //get canvas as image using .toDataURL(), then decode in swift, and give to user to print
         webView.evaluate(script: "enlargeCanvas();") { prevZoom, _ in
@@ -54,7 +59,7 @@ UPDATE_CANVAS = true;
                         printController.showsPaperSelectionForLoadedPapers = true
                         
                         let printInfo = UIPrintInfo.printInfo()
-                        printInfo.outputType = .photo
+                        printInfo.outputType = .general
                         printController.printInfo = printInfo
                         
                         printController.present(animated: true)
