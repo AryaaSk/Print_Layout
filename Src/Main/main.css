@@ -5,8 +5,9 @@ body {
     overflow: hidden;
     padding: 0;
 
-    --taskbarBorderRadius: 10px;
     --resizeCounterRadius: 15px;
+    --taskbarBorderRadius: 10px;
+    --taskbarWidth: 300px;
 
     touch-action: none;
 }
@@ -106,12 +107,12 @@ body {
 
 #taskbar {
     position: fixed;
-    left: calc(50% - 200px);
-    right: calc(50% - 200px);
+    left: calc(50% - calc(var(--taskbarWidth) / 2));
+    right: calc(50% - calc(var(--taskbarWidth) / 2));
     bottom: 50px;
 
     height: 60px;
-    width: 400px;
+    width: var(--taskbarWidth);
 
     display: grid;
     grid-template-columns: 33% 34% 33%;

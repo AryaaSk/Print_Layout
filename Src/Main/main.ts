@@ -5,8 +5,8 @@ const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
 const DEFAULT_PAPER_MARGIN_PX = 50;
-const DPI = window.devicePixelRatio;
-let MM_PX_SF = 1;
+const DPI = window.devicePixelRatio; //used in controls to map mouse position to scene position
+const MM_PX_SF = 3;
 let ZOOM = 1;
 
 const IMAGES: { src: string, leftMM: number, topMM: number, heightMM: number, widthMM: number }[] = []; //rotation in degrees
@@ -27,10 +27,12 @@ const InitHTML = (taskbar: HTMLElement) => {
     }
 }
 const FitToScreen = () => {
-    //paper's size in mm should stay the same, however we can change the MM_PX_SF
-    const heightSF = (window.innerHeight - DEFAULT_PAPER_MARGIN_PX) / PAPER_HEIGHT_MM;
-    const widthSF = (window.innerWidth - DEFAULT_PAPER_MARGIN_PX) / PAPER_WIDTH_MM;
-    MM_PX_SF = (heightSF < widthSF) ? heightSF : widthSF;
+    //paper's size in mm should stay the same, however we can change the ZOOM, at regular scale the A4 paper will be
+    const [paperHeightPX, paperWidthPX] = [PAPER_HEIGHT_MM * MM_PX_SF, PAPER_WIDTH_MM * MM_PX_SF];
+
+    const heightSF = (window.innerHeight - DEFAULT_PAPER_MARGIN_PX) / paperHeightPX;
+    const widthSF = (window.innerWidth - DEFAULT_PAPER_MARGIN_PX) / paperWidthPX;
+    ZOOM = (heightSF < widthSF) ? heightSF : widthSF;
     UPDATE_CANVAS = true;
 }
 
@@ -122,7 +124,6 @@ const distanceBetween = (p1: number[], p2: number[]) => {
 }
 
 const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, bringForwardButton: HTMLInputElement, deleteButton: HTMLInputElement, duplicateButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
-
     if (isMobile == false) {
         initDesktopControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomRightResizeElement }, taskbar);
     }
@@ -148,14 +149,17 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
 
     deleteButton.onclick = () => {
         IMAGES.splice(SELECTED_IMAGE_INDEX!, 1);
+        SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it has been deleted
         UPDATE_CANVAS = true;
     }
 
     duplicateButton.onclick = () => { //not working perfectly, new image goes behind for some reason
         const newImage = JSON.parse(JSON.stringify(IMAGES[SELECTED_IMAGE_INDEX!]));
-        newImage.leftMM + DEFAULT_IMAGE_OFFSET_MM;
-        newImage.topMM + DEFAULT_IMAGE_OFFSET_MM;
+        newImage.leftMM += DEFAULT_IMAGE_OFFSET_MM;
+        newImage.topMM += DEFAULT_IMAGE_OFFSET_MM;
+
         IMAGES.push(newImage);
+        SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it will go to the duplicated image.
         UPDATE_CANVAS = true;
     }
 }
@@ -165,7 +169,6 @@ const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, extras:
     file.onclick = () => {
         fileInput.click();
     }
-
     fileInput.onchange = () => {
         const files = fileInput.files!;
 
@@ -196,17 +199,18 @@ const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, extras:
 
 
 
-const NewImageObject = (src: string, height: number, width: number, leftMM?: number, topMM?: number) => {
+const NewImageObject = (src: string, heightPX: number, widthPX: number, leftMM?: number, topMM?: number) => { //height and width refer to original dimensions of image
     const [left, top] = [(leftMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : leftMM, (topMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : topMM]
+    const [heightMM, widthMM] = [heightPX / MM_PX_SF, widthPX / MM_PX_SF];
 
-    const heightScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / height;
-    const widthScaleFactor = (DEFAULT_IMAGE_SIZE_MM * MM_PX_SF) / width;
+    const heightScaleFactor = DEFAULT_IMAGE_SIZE_MM / heightMM;
+    const widthScaleFactor = DEFAULT_IMAGE_SIZE_MM / widthMM;
     let scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-    if (scaleFactor > 1) { //don't want to enlarge images
+    if (scaleFactor > 1) { //don't want to enlarge images if they are already smaller than DEFAULT_IMAGE_SIZE_MM
         scaleFactor = 1;
     }
 
-    return { src: src, leftMM: left, topMM: top, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF};
+    return { src: src, leftMM: left, topMM: top, heightMM: heightMM * scaleFactor, widthMM: widthMM * scaleFactor};
 }
 
 const DrawImages = (canvas: CanvasRenderingContext2D) => { //Need to work on speed, since currently it is very slow
