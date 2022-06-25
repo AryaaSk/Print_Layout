@@ -53,7 +53,7 @@ function enlargeCanvas() { //again made for iOS app, not to be used in normal we
 function revertCanvas(prevZoom: number) { //also made for iOS app
     const body = document.body;
     const paper = <HTMLCanvasElement>document.getElementById("paper")!;
-    
+
     ZOOM = prevZoom;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "all");
@@ -121,7 +121,7 @@ const distanceBetween = (p1: number[], p2: number[]) => {
     return Math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2);
 }
 
-const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, bringForwardButton: HTMLInputElement, deleteButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
+const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, bringForwardButton: HTMLInputElement, deleteButton: HTMLInputElement, duplicateButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
 
     if (isMobile == false) {
         initDesktopControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomRightResizeElement }, taskbar);
@@ -148,6 +148,14 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
 
     deleteButton.onclick = () => {
         IMAGES.splice(SELECTED_IMAGE_INDEX!, 1);
+        UPDATE_CANVAS = true;
+    }
+
+    duplicateButton.onclick = () => { //not working perfectly, new image goes behind for some reason
+        const newImage = JSON.parse(JSON.stringify(IMAGES[SELECTED_IMAGE_INDEX!]));
+        newImage.leftMM + DEFAULT_IMAGE_OFFSET_MM;
+        newImage.topMM + DEFAULT_IMAGE_OFFSET_MM;
+        IMAGES.push(newImage);
         UPDATE_CANVAS = true;
     }
 }
@@ -308,7 +316,7 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
 const Main = () => {
     const [body, paper, taskbar] = [document.body, <HTMLCanvasElement>document.getElementById("paper")!, document.getElementById("taskbar")!];
     const [file, extras, print] = [<HTMLInputElement>document.getElementById("addImage")!, <HTMLInputElement>document.getElementById("extrasButton")!, <HTMLInputElement>document.getElementById("printButton")!]
-    const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!, <HTMLInputElement>document.getElementById("bringForward")!, <HTMLInputElement>document.getElementById("delete")!];
+    const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton, duplicateButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!, <HTMLInputElement>document.getElementById("bringForward")!, <HTMLInputElement>document.getElementById("delete")!, <HTMLInputElement>document.getElementById("duplicate")!];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize")!, document.getElementById("topRightResize")!, document.getElementById("bottomLeftResize")!, document.getElementById("bottomRightResize")!];
 
     //IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
@@ -320,7 +328,7 @@ const Main = () => {
     SizePaper(paper);
     PositionPaper(paper);
 
-    InitPaperListeners(body, paper, rotateButton, bringForwardButton, deleteButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
+    InitPaperListeners(body, paper, rotateButton, bringForwardButton, deleteButton, duplicateButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
     InitTaskbarListeners(body, file, extras, print, paper);
 
     CanvasLoop(paper, canvas, transformOverlay);

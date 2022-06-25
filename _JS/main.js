@@ -115,7 +115,7 @@ function rotate90(src) {
 const distanceBetween = (p1, p2) => {
     return Math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2);
 };
-const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, deleteButton, resizeElements, taskbar) => {
+const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, deleteButton, duplicateButton, resizeElements, taskbar) => {
     if (isMobile == false) {
         initDesktopControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomRightResizeElement }, taskbar);
     }
@@ -138,6 +138,13 @@ const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, delet
     };
     deleteButton.onclick = () => {
         IMAGES.splice(SELECTED_IMAGE_INDEX, 1);
+        UPDATE_CANVAS = true;
+    };
+    duplicateButton.onclick = () => {
+        const newImage = JSON.parse(JSON.stringify(IMAGES[SELECTED_IMAGE_INDEX]));
+        newImage.leftMM + DEFAULT_IMAGE_OFFSET_MM;
+        newImage.topMM + DEFAULT_IMAGE_OFFSET_MM;
+        IMAGES.push(newImage);
         UPDATE_CANVAS = true;
     };
 };
@@ -265,7 +272,7 @@ const CanvasLoop = (paper, canvas, transformOverlay) => {
 const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper"), document.getElementById("taskbar")];
     const [file, extras, print] = [document.getElementById("addImage"), document.getElementById("extrasButton"), document.getElementById("printButton")];
-    const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("rotateButton"), document.getElementById("bringForward"), document.getElementById("delete")];
+    const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton, duplicateButton] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("rotateButton"), document.getElementById("bringForward"), document.getElementById("delete"), document.getElementById("duplicate")];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize"), document.getElementById("topRightResize"), document.getElementById("bottomLeftResize"), document.getElementById("bottomRightResize")];
     //IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
@@ -273,7 +280,7 @@ const Main = () => {
     FitToScreen();
     SizePaper(paper);
     PositionPaper(paper);
-    InitPaperListeners(body, paper, rotateButton, bringForwardButton, deleteButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
+    InitPaperListeners(body, paper, rotateButton, bringForwardButton, deleteButton, duplicateButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
     InitTaskbarListeners(body, file, extras, print, paper);
     CanvasLoop(paper, canvas, transformOverlay);
 };
