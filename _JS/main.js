@@ -151,7 +151,10 @@ const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, delet
         SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it will go to the duplicated image.
         UPDATE_CANVAS = true;
     };
-    document.onpaste = () => {
+    document.onpaste = ($e) => {
+        const dT = $e.clipboardData;
+        const files = dT.files;
+        ParseFiles(files);
     };
 };
 const InitTaskbarListeners = (body, file, extras, print, paper) => {
@@ -161,19 +164,7 @@ const InitTaskbarListeners = (body, file, extras, print, paper) => {
     };
     fileInput.onchange = () => {
         const files = fileInput.files;
-        for (const file of files) {
-            const fReader = new FileReader();
-            fReader.readAsDataURL(file);
-            fReader.onloadend = ($e) => {
-                const src = $e.target.result;
-                const image = new Image();
-                image.src = src;
-                image.onload = () => {
-                    IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
-                    UPDATE_CANVAS = true;
-                };
-            };
-        }
+        ParseFiles(files);
     };
     extras.onclick = () => {
         console.log("Handle extra options");
@@ -192,6 +183,21 @@ const NewImageObject = (src, heightPX, widthPX, leftMM, topMM) => {
         scaleFactor = 1;
     }
     return { src: src, leftMM: left, topMM: top, heightMM: heightMM * scaleFactor, widthMM: widthMM * scaleFactor };
+};
+const ParseFiles = (files) => {
+    for (const file of files) {
+        const fReader = new FileReader();
+        fReader.readAsDataURL(file);
+        fReader.onloadend = ($e) => {
+            const src = $e.target.result;
+            const image = new Image();
+            image.src = src;
+            image.onload = () => {
+                IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
+                UPDATE_CANVAS = true;
+            };
+        };
+    }
 };
 const DrawImages = (canvas) => {
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];

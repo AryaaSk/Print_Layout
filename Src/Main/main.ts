@@ -169,7 +169,10 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         UPDATE_CANVAS = true;
     }
 
-    document.onpaste = () => { //paste image
+    document.onpaste = ($e) => { //paste image
+        const dT = $e.clipboardData!;
+        const files = dT.files!;
+        ParseFiles(files);
     }
 }
 
@@ -180,21 +183,7 @@ const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, extras:
     }
     fileInput.onchange = () => {
         const files = fileInput.files!;
-
-        for (const file of files) {
-            const fReader = new FileReader();
-            fReader.readAsDataURL(file);
-            fReader.onloadend = ($e) => {
-                const src = <string>$e.target!.result;
-
-                const image = new Image();
-                image.src = src;
-                image.onload = () => {
-                    IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
-                    UPDATE_CANVAS = true;
-                }
-            }
-        }
+        ParseFiles(files)
     }
 
     extras.onclick = () => {
@@ -220,6 +209,22 @@ const NewImageObject = (src: string, heightPX: number, widthPX: number, leftMM?:
     }
 
     return { src: src, leftMM: left, topMM: top, heightMM: heightMM * scaleFactor, widthMM: widthMM * scaleFactor};
+}
+const ParseFiles = (files: FileList) => {
+    for (const file of files) {
+        const fReader = new FileReader();
+        fReader.readAsDataURL(file);
+        fReader.onloadend = ($e) => {
+            const src = <string>$e.target!.result;
+
+            const image = new Image();
+            image.src = src;
+            image.onload = () => {
+                IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
+                UPDATE_CANVAS = true;
+            }
+        }
+    }
 }
 
 const DrawImages = (canvas: CanvasRenderingContext2D) => { //Need to work on speed, since currently it is very slow
