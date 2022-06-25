@@ -46,7 +46,7 @@ function enlargeCanvas() {
     const body = document.body;
     const paper = document.getElementById("paper");
     const previousZoom = ZOOM;
-    ZOOM = 5;
+    ZOOM = 4;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "none");
     return previousZoom;
@@ -226,7 +226,7 @@ const PrintCanvas = (body, paper) => {
     let width = paper.width;
     let height = paper.height;
     const prevZoom = ZOOM;
-    ZOOM = 5;
+    ZOOM = 4;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "none");
     const isSafari = /^((?!chrome|android).)*safari/i.test(window.navigator.userAgent);
