@@ -47,7 +47,7 @@ function enlargeCanvas() { //again made for iOS app, not to be used in normal we
     const paper = <HTMLCanvasElement>document.getElementById("paper")!;
 
     const previousZoom = ZOOM;
-    ZOOM = 8;
+    ZOOM = 5;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "none");
     return previousZoom;
@@ -260,7 +260,7 @@ const PrintCanvas = (body: HTMLElement, paper: HTMLCanvasElement) => {
     let height = paper.height;
 
     const prevZoom = ZOOM;
-    ZOOM = 8;
+    ZOOM = 5;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "none");
 
