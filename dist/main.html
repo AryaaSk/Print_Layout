@@ -5,13 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Print Layout</title>
 
+    <script>
+        let isMobile = false;
+        if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
+            isMobile = true;
+        }
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.1/jspdf.debug.js"></script>
+    <script src="desktopControls.js"></script>
+    <script src="mobileControls.js"></script>
     <script src="main.js" defer></script>
     <link rel="stylesheet" href="main.css">
 </head>
-<body class="noSelect" ontouchstart>
-
-    <canvas id="paper"></canvas>
+<body class="noSelect" ontouchstart="">
 
     <div id="transformOverlay">
         <div class="resizeCounter" id="topLeftResize"></div>
@@ -23,6 +30,8 @@
         <button class="imageButton" id="bringForward">&#x2398</button>
         <button class="imageButton" id="delete">⌫</button>
     </div>
+
+    <canvas id="paper"></canvas>
 
     <div id="taskbar">
         <button class="taskbarButton" id="addImage"><img src="Plus.svg" class="taskBarButtonImage" draggable="false" alt="Add Image"></button>
