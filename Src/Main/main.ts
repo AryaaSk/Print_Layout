@@ -3,6 +3,7 @@ declare const jsPDF: any;
 const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
+const DEFAULT_PAPER_MARGIN_PX = 50;
 let UPDATE_CANVAS = false;
 
 const IMAGES: { src: string, leftMM: number, topMM: number, heightMM: number, widthMM: number }[] = []; //rotation in degrees
@@ -11,20 +12,24 @@ const DEFAULT_IMAGE_SIZE_MM = 200;
 const TRANSFORM_OVERLAY_RESIZE_RADIUS = 15;
 
 const DPI = window.devicePixelRatio;
-const MM_PX_SF = 3 * DPI; //1mm = 3px * dpi
+let MM_PX_SF = 1;
 let ZOOM = 1;
 
 let [MOUSE_X, MOUSE_Y] = [0, 0];
 let SELECTED_IMAGE_INDEX: number | undefined = undefined;
 
-const FormatPaper = (paper: HTMLElement) => { //to fix blurry lines, only called once
-    paper.setAttribute('height', String(PAPER_HEIGHT_MM * MM_PX_SF * ZOOM));
-    paper.setAttribute('width', String(PAPER_WIDTH_MM * MM_PX_SF * ZOOM));
+const FitToScreen = () => {
+    //paper's size in mm should stay the same, however we can change the MM_PX_SF
+    const heightSF = (window.innerHeight - DEFAULT_PAPER_MARGIN_PX) / PAPER_HEIGHT_MM;
+    const widthSF = (window.innerWidth - DEFAULT_PAPER_MARGIN_PX) / PAPER_WIDTH_MM;
+    MM_PX_SF = (heightSF < widthSF) ? heightSF : widthSF;
+    UPDATE_CANVAS = true;
 }
 const SizePaper = (paper: HTMLElement) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
-    FormatPaper(paper);
+    paper.setAttribute('height', String(PAPER_HEIGHT_MM * MM_PX_SF * ZOOM));
+    paper.setAttribute('width', String(PAPER_WIDTH_MM * MM_PX_SF * ZOOM));
     UPDATE_CANVAS = true;
 }
 const PositionPaper = (paper: HTMLElement) => {
@@ -372,9 +377,9 @@ const Main = () => {
     IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
 
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
+    FitToScreen();
 
     SizePaper(paper);
-    FormatPaper(paper);
     PositionPaper(paper);
 
     InitPaperListeners(body, paper, rotateButton, bringForwardButton, deleteButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
