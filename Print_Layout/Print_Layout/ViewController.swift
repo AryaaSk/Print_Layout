@@ -45,7 +45,7 @@ UPDATE_CANVAS = true;
     
     @IBAction func printImage(_ sender: Any) { //get canvas as image using .toDataURL(), then decode in swift, and give to user to print
         webView.evaluate(script: "enlargeCanvas();") { prevZoom, _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { //wait 2 seconds, similar to setTimeout(() => {}, 2000); in JS
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { //wait 3 seconds, similar to setTimeout(() => {}, 3000); in JS
                 self.webView.evaluate(script: "GetCanvasBase64Encoded();") { data, error in
                     self.webView.evaluateJavaScript("revertCanvas(\(prevZoom!))")
                     
@@ -60,8 +60,11 @@ UPDATE_CANVAS = true;
                         printController.showsPaperSelectionForLoadedPapers = true
                         
                         let printInfo = UIPrintInfo.printInfo()
-                        printInfo.outputType = .general
+                        printInfo.outputType = .general //dont want to set to .photo since that doesnt allow A4 papers (I can't find out how to change it)
                         printController.printInfo = printInfo
+                        
+                        let printFormatter = UIPrintFormatter();
+                        printFormatter.perPageContentInsets = UIEdgeInsets(top: -20, left: -20, bottom: -20, right: -20) //I cant seem to get rid of the border around the photo
                         
                         printController.present(animated: true)
                     }

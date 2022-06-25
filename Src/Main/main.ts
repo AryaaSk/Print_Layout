@@ -43,6 +43,7 @@ function GetCanvasBase64Encoded() { //for iOS, which is why it is using the glob
 function enlargeCanvas() { //again made for iOS app, not to be used in normal web app
     const body = document.body;
     const paper = <HTMLCanvasElement>document.getElementById("paper")!;
+
     const previousZoom = ZOOM;
     ZOOM = 8;
     SizePaper(paper);
@@ -52,6 +53,7 @@ function enlargeCanvas() { //again made for iOS app, not to be used in normal we
 function revertCanvas(prevZoom: number) { //also made for iOS app
     const body = document.body;
     const paper = <HTMLCanvasElement>document.getElementById("paper")!;
+    
     ZOOM = prevZoom;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "all");
