@@ -71,7 +71,7 @@ function rotate90(src) {
 const distanceBetween = (p1, p2) => {
     return Math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2);
 };
-const InitPaperListeners = (body, paper, rotateButton, topLeftResizeElement, bottomRightResizeElement, taskbar) => {
+const InitPaperListeners = (body, paper, rotateButton, resizeElements, taskbar) => {
     let pointerDown = false;
     let [prevX, prevY] = [0, 0];
     let holdingResize = undefined;
@@ -86,16 +86,24 @@ const InitPaperListeners = (body, paper, rotateButton, topLeftResizeElement, bot
         if (SELECTED_IMAGE_INDEX != undefined) {
             const mousePosition = [MOUSE_X, MOUSE_Y];
             const radiusPX = TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI;
-            const [topLeftBoundingBox, bottomLeftBoundingBox] = [topLeftResizeElement.getBoundingClientRect(), bottomRightResizeElement.getBoundingClientRect()];
-            const [topLeftResize, bottomLeftResize] = [[topLeftBoundingBox.left + radiusPX, topLeftBoundingBox.top + radiusPX], [bottomLeftBoundingBox.left + radiusPX, bottomLeftBoundingBox.top + radiusPX]];
+            const [topLeftBoundingBox, topRightBoundingBox, bottomLeftBoundingBox, bottomRightBoundingBox] = [resizeElements.topLeftResizeElement.getBoundingClientRect(), resizeElements.topRightResizeElement.getBoundingClientRect(), resizeElements.bottomLeftResizeElement.getBoundingClientRect(), resizeElements.bottomRightResizeElement.getBoundingClientRect()];
+            const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [[topLeftBoundingBox.left + radiusPX, topLeftBoundingBox.top + radiusPX], [topRightBoundingBox.left + radiusPX, topRightBoundingBox.top + radiusPX], [bottomLeftBoundingBox.left + radiusPX, bottomLeftBoundingBox.top + radiusPX], [bottomRightBoundingBox.left + radiusPX, bottomRightBoundingBox.top + radiusPX]];
             holdingResize = undefined;
             if (distanceBetween(topLeftResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) { //calculate new distance between mouse position and bottom left, and resize based on that
                 holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topLeft" };
-                oppositeCorner = [bottomLeftResize[0] + radiusPX, bottomLeftResize[1] + radiusPX];
+                oppositeCorner = [bottomRightResize[0] + radiusPX, bottomRightResize[1] + radiusPX];
+            }
+            else if (distanceBetween(topRightResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) {
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topRight" };
+                oppositeCorner = [bottomLeftResize[0] - radiusPX, bottomLeftResize[1] + radiusPX];
             }
             else if (distanceBetween(bottomLeftResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) {
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomLeft" };
+                oppositeCorner = [topRightResize[0] + radiusPX, topRightResize[1] - radiusPX];
+            }
+            else if (distanceBetween(bottomRightResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) {
                 holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomRight" };
-                oppositeCorner = [topLeftResize[0] + radiusPX, topLeftResize[1] + radiusPX];
+                oppositeCorner = [topLeftResize[0] - radiusPX, topLeftResize[1] - radiusPX];
             }
         }
     };
@@ -109,12 +117,36 @@ const InitPaperListeners = (body, paper, rotateButton, topLeftResizeElement, bot
         }
         if (holdingResize != undefined) { //there could be no selected image, because the user is not hovering over the image anymore
             const img = IMAGES[holdingResize.imageIndex];
-            let [newWidthPX, newHeightPX] = (holdingResize.corner == "topLeft") ? [oppositeCorner[0] - MOUSE_X, oppositeCorner[1] - MOUSE_Y] : [MOUSE_X - oppositeCorner[0], MOUSE_Y - oppositeCorner[1]];
+            let [newWidthPX, newHeightPX] = [0, 0];
+            if (holdingResize.corner == "topLeft") {
+                [newWidthPX, newHeightPX] = [oppositeCorner[0] - MOUSE_X, oppositeCorner[1] - MOUSE_Y];
+            }
+            if (holdingResize.corner == "topRight") {
+                [newWidthPX, newHeightPX] = [MOUSE_X - oppositeCorner[0], oppositeCorner[1] - MOUSE_Y];
+            }
+            else if (holdingResize.corner == "bottomLeft") {
+                [newWidthPX, newHeightPX] = [oppositeCorner[0] - MOUSE_X, MOUSE_Y - oppositeCorner[1]];
+            }
+            else if (holdingResize.corner == "bottomRight") {
+                [newWidthPX, newHeightPX] = [MOUSE_X - oppositeCorner[0], MOUSE_Y - oppositeCorner[1]];
+            }
             const [newWidthMM, newHeightMM] = [newWidthPX / MM_PX_SF / ZOOM, newHeightPX / MM_PX_SF / ZOOM];
             const heightSF = newHeightMM / img.heightMM;
             const widthSF = newWidthMM / img.widthMM;
             const SF = (heightSF < widthSF) ? heightSF : widthSF;
-            const [widthDifferenceMM, heightDifferenceMM] = (holdingResize.corner == "topLeft") ? [img.widthMM - (img.widthMM * SF), img.heightMM - (img.heightMM * SF)] : [0, 0];
+            let [widthDifferenceMM, heightDifferenceMM] = [0, 0];
+            if (holdingResize.corner == "topLeft") {
+                [widthDifferenceMM, heightDifferenceMM] = [img.widthMM - (img.widthMM * SF), img.heightMM - (img.heightMM * SF)];
+            }
+            else if (holdingResize.corner == "topRight") {
+                [widthDifferenceMM, heightDifferenceMM] = [0, img.heightMM - (img.heightMM * SF)];
+            }
+            else if (holdingResize.corner == "bottomLeft") {
+                [widthDifferenceMM, heightDifferenceMM] = [img.widthMM - (img.widthMM * SF), 0];
+            }
+            else if (holdingResize.corner == "bottomRight") {
+                [widthDifferenceMM, heightDifferenceMM] = [0, 0];
+            }
             img.heightMM *= SF;
             img.widthMM *= SF;
             img.leftMM += widthDifferenceMM;
@@ -273,13 +305,13 @@ const CanvasLoop = (paper, canvas, transformOverlay) => {
 const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper"), document.getElementById("taskbar")];
     const [file, extras, print] = [document.getElementById("addImage"), document.getElementById("extrasButton"), document.getElementById("printButton")];
-    const [canvas, transformOverlay, rotateButton, topLeftResize, bottomRightResize] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("rotateButton"), document.getElementById("topLeftResize"), document.getElementById("bottomRightResize")];
+    const [canvas, transformOverlay, rotateButton, topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("rotateButton"), document.getElementById("topLeftResize"), document.getElementById("topRightResize"), document.getElementById("bottomLeftResize"), document.getElementById("bottomRightResize")];
     IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
     SizePaper(paper);
     FormatPaper(paper);
     PositionPaper(paper);
-    InitPaperListeners(body, paper, rotateButton, topLeftResize, bottomRightResize, taskbar);
+    InitPaperListeners(body, paper, rotateButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
     InitTaskbarListeners(file, extras, print, paper);
     CanvasLoop(paper, canvas, transformOverlay);
 };

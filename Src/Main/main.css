@@ -50,9 +50,23 @@ body {
     background-color: white;
     border: 1px solid black;
 }
+.resizeCounter:hover {
+    cursor: nwse-resize;
+}
+.opposite:hover {
+    cursor: nesw-resize;
+}
 #topLeftResize {
     left: calc(var(--resizeCounterRadius) * -1);
     top: calc(var(--resizeCounterRadius) * -1);
+}
+#topRightResize {
+    right: calc(var(--resizeCounterRadius) * -1);
+    top: calc(var(--resizeCounterRadius) * -1);
+}
+#bottomLeftResize {
+    left: calc(var(--resizeCounterRadius) * -1);
+    bottom: calc(var(--resizeCounterRadius) * -1);
 }
 #bottomRightResize {
     right: calc(var(--resizeCounterRadius) * -1);
