@@ -57,7 +57,6 @@ function revertCanvas(prevZoom) {
     ZOOM = prevZoom;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "all");
-    console.log("reverted");
 }
 const SizePaper = (paper) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
@@ -197,10 +196,6 @@ const DrawImages = (canvas) => {
 const PrintCanvas = (body, paper) => {
     let width = paper.width;
     let height = paper.height;
-    const pdf = (width > height) ? new jsPDF('l', 'px', [width, height]) : new jsPDF('p', 'px', [height, width]); //set the orientation
-    width = pdf.internal.pageSize.getWidth(); //then we get the dimensions from the 'pdf' file itself
-    height = pdf.internal.pageSize.getHeight();
-    pdf.addImage(paper, 'PNG', 0, 0, width, height);
     const prevZoom = ZOOM;
     ZOOM = 8;
     SizePaper(paper);
@@ -210,6 +205,10 @@ const PrintCanvas = (body, paper) => {
         var windowReference = window.open(); //for iOS safari
     }
     setTimeout(() => {
+        const pdf = (width > height) ? new jsPDF('l', 'px', [width, height]) : new jsPDF('p', 'px', [height, width]); //set the orientation
+        width = pdf.internal.pageSize.getWidth(); //then we get the dimensions from the 'pdf' file itself
+        height = pdf.internal.pageSize.getHeight();
+        pdf.addImage(paper, 'PNG', 0, 0, width, height);
         pdf.autoPrint();
         if (isSafari) {
             if (isMobile == false) { //desktop safari
@@ -268,7 +267,7 @@ const Main = () => {
     const [file, extras, print] = [document.getElementById("addImage"), document.getElementById("extrasButton"), document.getElementById("printButton")];
     const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("rotateButton"), document.getElementById("bringForward"), document.getElementById("delete")];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize"), document.getElementById("topRightResize"), document.getElementById("bottomLeftResize"), document.getElementById("bottomRightResize")];
-    IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
+    //IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
     InitHTML(taskbar);
     FitToScreen();

@@ -17,7 +17,8 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
         webView.uiDelegate = self
         webView.navigationDelegate = self
         
-        let url = "http://127.0.0.1:8080/main.html?hideTaskbar=true" //change to actual url later
+        //let url = "http://127.0.0.1:8080/main.html?hideTaskbar=true" //change to actual url later
+        let url = "https://aryaask.github.io/Print_Layout/dist/main.html?hideTaskbar=true" //github pages url
         let request = URLRequest(url: URL(string: url)!)
         webView.load(request)
     }

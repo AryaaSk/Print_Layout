@@ -55,7 +55,6 @@ function revertCanvas(prevZoom: number) { //also made for iOS app
     ZOOM = prevZoom;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "all");
-    console.log("reverted");
 }
 
 const SizePaper = (paper: HTMLElement) => {
@@ -221,48 +220,48 @@ const DrawImages = (canvas: CanvasRenderingContext2D) => { //Need to work on spe
 
 const PrintCanvas = (body: HTMLElement, paper: HTMLCanvasElement) => {
     let width = paper.width; 
-        let height = paper.height;
+    let height = paper.height;
 
+    const prevZoom = ZOOM;
+    ZOOM = 8;
+    SizePaper(paper);
+    body.style.setProperty("pointer-events", "none");
+
+    const isSafari = /^((?!chrome|android).)*safari/i.test(window.navigator.userAgent);
+    if (isSafari == true && isMobile == true) {
+        var windowReference = window.open(); //for iOS safari
+    }
+
+    setTimeout(() => { //https://github.com/parallax/jsPDF/issues/1487
         const pdf = (width > height) ? new jsPDF('l', 'px', [width, height]) : new jsPDF('p', 'px', [height, width]); //set the orientation
         width = pdf.internal.pageSize.getWidth(); //then we get the dimensions from the 'pdf' file itself
         height = pdf.internal.pageSize.getHeight();
         pdf.addImage(paper, 'PNG', 0, 0,width,height);
-        
-        const prevZoom = ZOOM;
-        ZOOM = 8;
-        SizePaper(paper);
-        body.style.setProperty("pointer-events", "none");
+        pdf.autoPrint();
 
-        const isSafari = /^((?!chrome|android).)*safari/i.test(window.navigator.userAgent);
-        if (isSafari == true && isMobile == true) {
-            var windowReference = window.open(); //for iOS safari
+        if (isSafari) {
+            if (isMobile == false) { //desktop safari
+                window.open(pdf.output('bloburl'), '_blank');
+            }
+
+            else { //mobile safari, does not allow window.open inside an async call: https://stackoverflow.com/questions/20696041/window-openurl-blank-not-working-on-imac-safari
+                windowReference!.location = pdf.output('bloburl');
+            }
+        }
+        else {
+            const hiddFrame = document.createElement('iframe');
+            hiddFrame.style.position = 'fixed';
+            hiddFrame.style.width = '1px';
+            hiddFrame.style.height = '1px';
+            hiddFrame.style.opacity = '0.01';
+            hiddFrame.src = pdf.output('bloburl');
+            document.body.appendChild(hiddFrame);
         }
 
-        setTimeout(() => { //https://github.com/parallax/jsPDF/issues/1487
-            pdf.autoPrint();
-            if (isSafari) {
-                if (isMobile == false) { //desktop safari
-                    window.open(pdf.output('bloburl'), '_blank');
-                }
-
-                else { //mobile safari, does not allow window.open inside an async call: https://stackoverflow.com/questions/20696041/window-openurl-blank-not-working-on-imac-safari
-                    windowReference!.location = pdf.output('bloburl');
-                }
-            }
-            else {
-                const hiddFrame = document.createElement('iframe');
-                hiddFrame.style.position = 'fixed';
-                hiddFrame.style.width = '1px';
-                hiddFrame.style.height = '1px';
-                hiddFrame.style.opacity = '0.01';
-                hiddFrame.src = pdf.output('bloburl');
-                document.body.appendChild(hiddFrame);
-            }
-
-            ZOOM = prevZoom;
-            SizePaper(paper);
-            body.style.setProperty("pointer-events", "all");
-        }, 3000);
+        ZOOM = prevZoom;
+        SizePaper(paper);
+        body.style.setProperty("pointer-events", "all");
+    }, 3000);
 }
 
 
@@ -310,7 +309,7 @@ const Main = () => {
     const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!, <HTMLInputElement>document.getElementById("bringForward")!, <HTMLInputElement>document.getElementById("delete")!];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize")!, document.getElementById("topRightResize")!, document.getElementById("bottomLeftResize")!, document.getElementById("bottomRightResize")!];
 
-    IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
+    //IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
 
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
     InitHTML(taskbar);
