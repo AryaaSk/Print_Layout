@@ -162,18 +162,27 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         newImage.leftMM += DEFAULT_IMAGE_OFFSET_MM;
         newImage.topMM += DEFAULT_IMAGE_OFFSET_MM;
 
-        console.log(newImage)
-
         IMAGES.push(newImage);
         SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it will go to the duplicated image.
         UPDATE_CANVAS = true;
     }
 
-    document.onpaste = ($e) => { //paste image
+    document.onpaste = ($e) => { //paste image: https://stackoverflow.com/questions/60503912/get-image-using-paste-from-the-browser
         const dT = $e.clipboardData!;
         const files = dT.files!;
         ParseFiles(files);
     }
+
+    /*
+    body.ondrop = ($e) => { //doesnt work yet
+        $e.stopPropagation();
+        $e.preventDefault(); 
+
+        const dT = $e.dataTransfer!;
+        const files = dT.files!;
+        ParseFiles(files);
+    }
+    */
 }
 
 const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, extras: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {
