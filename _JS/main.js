@@ -12,16 +12,16 @@ const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
 const DEFAULT_PAPER_MARGIN_PX = 50;
-let UPDATE_CANVAS = false;
+const DPI = window.devicePixelRatio;
+let MM_PX_SF = 1;
+let ZOOM = 1;
 const IMAGES = []; //rotation in degrees
 const DEFAULT_IMAGE_OFFSET_MM = 5;
 const DEFAULT_IMAGE_SIZE_MM = 200;
 const TRANSFORM_OVERLAY_RESIZE_RADIUS = 15;
-const DPI = window.devicePixelRatio;
-let MM_PX_SF = 1;
-let ZOOM = 1;
 let [MOUSE_X, MOUSE_Y] = [0, 0];
 let SELECTED_IMAGE_INDEX = undefined;
+let UPDATE_CANVAS = false;
 const FitToScreen = () => {
     //paper's size in mm should stay the same, however we can change the MM_PX_SF
     const heightSF = (window.innerHeight - DEFAULT_PAPER_MARGIN_PX) / PAPER_HEIGHT_MM;
@@ -55,6 +55,16 @@ const CheckIntersectionImage = (x, y, paperBoundingBox, imageIndex) => {
     }
     return false;
 };
+const CheckForHover = (paper) => {
+    const paperBoundingBox = paper.getBoundingClientRect();
+    let selectedImage = undefined;
+    for (let i = 0; i != IMAGES.length; i += 1) {
+        if (CheckIntersectionImage(MOUSE_X, MOUSE_Y, paperBoundingBox, i) == true) {
+            selectedImage = i;
+        }
+    }
+    return selectedImage;
+};
 function rotate90(src) {
     const promise = new Promise((resolve) => {
         var img = new Image();
@@ -77,109 +87,12 @@ const distanceBetween = (p1, p2) => {
     return Math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2);
 };
 const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, deleteButton, resizeElements, taskbar) => {
-    let pointerDown = false;
-    let [prevX, prevY] = [0, 0];
-    let holdingResize = undefined;
-    let oppositeCorner = [0, 0]; //[left, top]
-    body.onpointerdown = ($e) => {
-        const [x, y] = [$e.clientX, $e.clientY]; //check if pointer is above taskbar or any images, if so then doesn't count
-        if (CheckIntersectionElement(x, y, taskbar) == true) {
-            return;
-        }
-        pointerDown = true;
-        [prevX, prevY] = [$e.clientX, $e.clientY];
-        if (SELECTED_IMAGE_INDEX != undefined) {
-            const mousePosition = [MOUSE_X, MOUSE_Y];
-            const radiusPX = TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI;
-            const [topLeftBoundingBox, topRightBoundingBox, bottomLeftBoundingBox, bottomRightBoundingBox] = [resizeElements.topLeftResizeElement.getBoundingClientRect(), resizeElements.topRightResizeElement.getBoundingClientRect(), resizeElements.bottomLeftResizeElement.getBoundingClientRect(), resizeElements.bottomRightResizeElement.getBoundingClientRect()];
-            const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [[topLeftBoundingBox.left + radiusPX, topLeftBoundingBox.top + radiusPX], [topRightBoundingBox.left + radiusPX, topRightBoundingBox.top + radiusPX], [bottomLeftBoundingBox.left + radiusPX, bottomLeftBoundingBox.top + radiusPX], [bottomRightBoundingBox.left + radiusPX, bottomRightBoundingBox.top + radiusPX]];
-            holdingResize = undefined;
-            if (distanceBetween(topLeftResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) { //calculate new distance between mouse position and bottom left, and resize based on that
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topLeft" };
-                oppositeCorner = [bottomRightResize[0] + radiusPX, bottomRightResize[1] + radiusPX];
-            }
-            else if (distanceBetween(topRightResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) {
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topRight" };
-                oppositeCorner = [bottomLeftResize[0] - radiusPX, bottomLeftResize[1] + radiusPX];
-            }
-            else if (distanceBetween(bottomLeftResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) {
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomLeft" };
-                oppositeCorner = [topRightResize[0] + radiusPX, topRightResize[1] - radiusPX];
-            }
-            else if (distanceBetween(bottomRightResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) {
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomRight" };
-                oppositeCorner = [topLeftResize[0] - radiusPX, topLeftResize[1] - radiusPX];
-            }
-        }
-    };
-    body.onpointerup = () => {
-        pointerDown = false;
-    };
-    body.onpointermove = ($e) => {
-        [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
-        if (pointerDown == false) {
-            return;
-        }
-        if (holdingResize != undefined) { //there could be no selected image, because the user is not hovering over the image anymore
-            const img = IMAGES[holdingResize.imageIndex];
-            let [newWidthPX, newHeightPX] = [0, 0];
-            if (holdingResize.corner == "topLeft") {
-                [newWidthPX, newHeightPX] = [oppositeCorner[0] - MOUSE_X, oppositeCorner[1] - MOUSE_Y];
-            }
-            if (holdingResize.corner == "topRight") {
-                [newWidthPX, newHeightPX] = [MOUSE_X - oppositeCorner[0], oppositeCorner[1] - MOUSE_Y];
-            }
-            else if (holdingResize.corner == "bottomLeft") {
-                [newWidthPX, newHeightPX] = [oppositeCorner[0] - MOUSE_X, MOUSE_Y - oppositeCorner[1]];
-            }
-            else if (holdingResize.corner == "bottomRight") {
-                [newWidthPX, newHeightPX] = [MOUSE_X - oppositeCorner[0], MOUSE_Y - oppositeCorner[1]];
-            }
-            const [newWidthMM, newHeightMM] = [newWidthPX / MM_PX_SF / ZOOM, newHeightPX / MM_PX_SF / ZOOM];
-            const heightSF = newHeightMM / img.heightMM;
-            const widthSF = newWidthMM / img.widthMM;
-            const SF = (heightSF < widthSF) ? heightSF : widthSF;
-            let [widthDifferenceMM, heightDifferenceMM] = [0, 0];
-            if (holdingResize.corner == "topLeft") {
-                [widthDifferenceMM, heightDifferenceMM] = [img.widthMM - (img.widthMM * SF), img.heightMM - (img.heightMM * SF)];
-            }
-            else if (holdingResize.corner == "topRight") {
-                [widthDifferenceMM, heightDifferenceMM] = [0, img.heightMM - (img.heightMM * SF)];
-            }
-            else if (holdingResize.corner == "bottomLeft") {
-                [widthDifferenceMM, heightDifferenceMM] = [img.widthMM - (img.widthMM * SF), 0];
-            }
-            else if (holdingResize.corner == "bottomRight") {
-                [widthDifferenceMM, heightDifferenceMM] = [0, 0];
-            }
-            img.heightMM *= SF;
-            img.widthMM *= SF;
-            img.leftMM += widthDifferenceMM;
-            img.topMM += heightDifferenceMM;
-            UPDATE_CANVAS = true;
-        }
-        else {
-            const [deltaX, deltaY] = [MOUSE_X - prevX, MOUSE_Y - prevY];
-            [prevX, prevY] = [MOUSE_X, MOUSE_Y];
-            if (SELECTED_IMAGE_INDEX == undefined) {
-                PAPER_POSITION.left += deltaX;
-                PAPER_POSITION.top += deltaY;
-                PositionPaper(paper);
-            }
-            else {
-                const img = IMAGES[SELECTED_IMAGE_INDEX];
-                img.leftMM += deltaX / MM_PX_SF / ZOOM; //applying the reverse to go from px -> mm
-                img.topMM += deltaY / MM_PX_SF / ZOOM;
-                UPDATE_CANVAS = true;
-            }
-        }
-    };
-    body.onwheel = ($e) => {
-        const damping = 1 / 400;
-        const zoomFactor = $e.deltaY * damping;
-        ZOOM += zoomFactor;
-        SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
-    };
+    if (isMobile == false) {
+        initDesktopControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomLeftResizeElement }, taskbar);
+    }
+    else {
+        initMobileControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomLeftResizeElement }, taskbar);
+    }
     rotateButton.onclick = () => __awaiter(void 0, void 0, void 0, function* () {
         const img = IMAGES[SELECTED_IMAGE_INDEX];
         const rotatedBase64 = yield rotate90(img.src); //just rotating the raw data, so that we don't have to worry about the rotation later on
@@ -266,7 +179,7 @@ const NewImageObject = (src, height, width, leftMM, topMM) => {
     }
     return { src: src, leftMM: left, topMM: top, heightMM: height * scaleFactor / MM_PX_SF, widthMM: width * scaleFactor / MM_PX_SF };
 };
-const UpdateImages = (canvas) => {
+const DrawImages = (canvas) => {
     const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
     canvas.fillStyle = "white";
     canvas.fillRect(0, 0, canvasWidth, canvasHeight); //to make the background white
@@ -280,20 +193,10 @@ const UpdateImages = (canvas) => {
         };
     }
 };
-const CheckForHover = (paper) => {
-    const paperBoundingBox = paper.getBoundingClientRect();
-    let selectedImage = undefined;
-    for (let i = 0; i != IMAGES.length; i += 1) {
-        if (CheckIntersectionImage(MOUSE_X, MOUSE_Y, paperBoundingBox, i) == true) {
-            selectedImage = i;
-        }
-    }
-    return selectedImage;
-};
 const CanvasLoop = (paper, canvas, transformOverlay) => {
     setInterval(() => {
         if (UPDATE_CANVAS == true) {
-            UpdateImages(canvas);
+            DrawImages(canvas);
             UPDATE_CANVAS = false;
         }
         const newSelectedIndex = CheckForHover(paper);
