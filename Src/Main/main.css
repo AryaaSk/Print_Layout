@@ -147,19 +147,19 @@ body {
 
 
 
-@media (hover: none) { /* Mobile Specific */
+@media only screen and (hover: none) and (pointer: coarse){ /* Mobile Specific */
     #taskbar {
         bottom: 20px;
     }
 
     .taskbarButton:active {
-        background-color: #212121;    
+        background-color: #2a2a2a;    
     }
 }
 
 
-@media not (hover: none) { /* Desktop Specific */
+@media not screen and (hover: none) and (pointer: coarse) { /* Desktop Specific */
     .taskbarButton:hover{
-        background-color: #212121;
-    }
+        background-color: #2a2a2a;
+    } 
 }

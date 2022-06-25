@@ -137,36 +137,7 @@ const InitTaskbarListeners = (body, file, extras, print, paper) => {
         console.log("Handle extra options");
     };
     print.onclick = () => {
-        let width = paper.width;
-        let height = paper.height;
-        const pdf = (width > height) ? new jsPDF('l', 'px', [width, height]) : new jsPDF('p', 'px', [height, width]); //set the orientation
-        width = pdf.internal.pageSize.getWidth(); //then we get the dimensions from the 'pdf' file itself
-        height = pdf.internal.pageSize.getHeight();
-        pdf.addImage(paper, 'PNG', 0, 0, width, height);
-        const prevZoom = ZOOM;
-        ZOOM = 15;
-        SizePaper(paper);
-        body.style.setProperty("pointer-events", "none");
-        setTimeout(() => {
-            //https://github.com/parallax/jsPDF/issues/1487
-            pdf.autoPrint();
-            const isSafari = /^((?!chrome|android).)*safari/i.test(window.navigator.userAgent);
-            if (isSafari) {
-                window.open(pdf.output('bloburl'), '_blank');
-            }
-            else {
-                const hiddFrame = document.createElement('iframe');
-                hiddFrame.style.position = 'fixed';
-                hiddFrame.style.width = '1px';
-                hiddFrame.style.height = '1px';
-                hiddFrame.style.opacity = '0.01';
-                hiddFrame.src = pdf.output('bloburl');
-                document.body.appendChild(hiddFrame);
-            }
-            ZOOM = prevZoom;
-            SizePaper(paper);
-            body.style.setProperty("pointer-events", "all");
-        }, 3000);
+        PrintCanvas(body, paper);
     };
 };
 const NewImageObject = (src, height, width, leftMM, topMM) => {
@@ -192,6 +163,45 @@ const DrawImages = (canvas) => {
             canvas.drawImage(img, imageX, imageY, imageWidthPX, imageHeightPX);
         };
     }
+};
+const PrintCanvas = (body, paper) => {
+    let width = paper.width;
+    let height = paper.height;
+    const pdf = (width > height) ? new jsPDF('l', 'px', [width, height]) : new jsPDF('p', 'px', [height, width]); //set the orientation
+    width = pdf.internal.pageSize.getWidth(); //then we get the dimensions from the 'pdf' file itself
+    height = pdf.internal.pageSize.getHeight();
+    pdf.addImage(paper, 'PNG', 0, 0, width, height);
+    const prevZoom = ZOOM;
+    ZOOM = 8;
+    SizePaper(paper);
+    body.style.setProperty("pointer-events", "none");
+    const isSafari = /^((?!chrome|android).)*safari/i.test(window.navigator.userAgent);
+    if (isSafari == true && isMobile == true) {
+        var windowReference = window.open(); //for iOS safari
+    }
+    setTimeout(() => {
+        pdf.autoPrint();
+        if (isSafari) {
+            if (isMobile == false) { //desktop safari
+                window.open(pdf.output('bloburl'), '_blank');
+            }
+            else { //mobile safari, does not allow window.open inside an async call: https://stackoverflow.com/questions/20696041/window-openurl-blank-not-working-on-imac-safari
+                windowReference.location = pdf.output('bloburl');
+            }
+        }
+        else {
+            const hiddFrame = document.createElement('iframe');
+            hiddFrame.style.position = 'fixed';
+            hiddFrame.style.width = '1px';
+            hiddFrame.style.height = '1px';
+            hiddFrame.style.opacity = '0.01';
+            hiddFrame.src = pdf.output('bloburl');
+            document.body.appendChild(hiddFrame);
+        }
+        ZOOM = prevZoom;
+        SizePaper(paper);
+        body.style.setProperty("pointer-events", "all");
+    }, 3000);
 };
 const CanvasLoop = (paper, canvas, transformOverlay) => {
     setInterval(() => {
