@@ -22,6 +22,13 @@ const TRANSFORM_OVERLAY_RESIZE_RADIUS = 15;
 let [MOUSE_X, MOUSE_Y] = [0, 0];
 let SELECTED_IMAGE_INDEX = undefined;
 let UPDATE_CANVAS = false;
+const InitHTML = (taskbar) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hideTaskbar = urlParams.get('hideTaskbar');
+    if (hideTaskbar == "true") {
+        taskbar.style.display = "none";
+    }
+};
 const FitToScreen = () => {
     //paper's size in mm should stay the same, however we can change the MM_PX_SF
     const heightSF = (window.innerHeight - DEFAULT_PAPER_MARGIN_PX) / PAPER_HEIGHT_MM;
@@ -29,6 +36,25 @@ const FitToScreen = () => {
     MM_PX_SF = (heightSF < widthSF) ? heightSF : widthSF;
     UPDATE_CANVAS = true;
 };
+const syncWait = (ms) => {
+    const end = Date.now() + ms;
+    while (Date.now() < end)
+        continue;
+};
+function GetCanvasBase64Encoded() {
+    const body = document.body;
+    const paper = document.getElementById("paper");
+    const prevZoom = ZOOM;
+    ZOOM = 8;
+    SizePaper(paper);
+    body.style.setProperty("pointer-events", "none");
+    //syncWait(1000);
+    const base64EncodedString = paper.toDataURL();
+    ZOOM = prevZoom;
+    SizePaper(paper);
+    body.style.setProperty("pointer-events", "all");
+    return base64EncodedString.slice(22, base64EncodedString.length);
+}
 const SizePaper = (paper) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
@@ -240,6 +266,7 @@ const Main = () => {
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize"), document.getElementById("topRightResize"), document.getElementById("bottomLeftResize"), document.getElementById("bottomRightResize")];
     IMAGES.push(NewImageObject("APIs With Fetch copy.png", 1080, 1920)); //for testing
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
+    InitHTML(taskbar);
     FitToScreen();
     SizePaper(paper);
     PositionPaper(paper);

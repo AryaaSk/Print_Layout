@@ -36,6 +36,24 @@ const FitToScreen = () => {
     MM_PX_SF = (heightSF < widthSF) ? heightSF : widthSF;
     UPDATE_CANVAS = true;
 };
+const syncWait = (ms) => {
+    const end = Date.now() + ms;
+    while (Date.now() < end)
+        continue;
+};
+function GetCanvasBase64Encoded() {
+    const body = document.body;
+    const paper = document.getElementById("paper");
+    const prevZoom = ZOOM;
+    ZOOM = 8;
+    SizePaper(paper);
+    body.style.setProperty("pointer-events", "none");
+    const base64EncodedString = paper.toDataURL(); //it seems like I dont even need the wait, so the user doesnt have to see the screen zoom in
+    ZOOM = prevZoom;
+    SizePaper(paper);
+    body.style.setProperty("pointer-events", "all");
+    return base64EncodedString.slice(22, base64EncodedString.length);
+}
 const SizePaper = (paper) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
