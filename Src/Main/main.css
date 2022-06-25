@@ -3,9 +3,19 @@ body {
     display: grid;
     place-content: center;
     overflow: hidden;
+    padding: 0;
 
     --taskbarBorderRadius: 10px;
     --resizeCounterRadius: 15px;
+}
+.noSelect {
+    -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none; /* Safari */
+       -khtml-user-select: none; /* Konqueror HTML */
+         -moz-user-select: none; /* Old versions of Firefox */
+          -ms-user-select: none; /* Internet Explorer/Edge */
+              user-select: none; /* Non-prefixed version, currently
+                                    supported by Chrome, Edge, Opera and Firefox */
 }
 
 
@@ -14,6 +24,7 @@ body {
     position: relative;
     left: 0;
     top: 0;
+    padding: 0;
 
     background-color: white;
     padding: 0;
@@ -27,20 +38,30 @@ body {
     -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
     -moz-box-sizing: border-box;    /* Firefox, other Gecko */
     box-sizing: border-box;         /* Opera/IE 8+ */
+    padding: 0;
 
     background-color: transparent;
     border: 5px solid #c4c4c4;
     
-    display: grid;
-    place-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-#rotateButton {
+
+.imageButton {
     height: 50px;
     width: 50px;
+    margin: 5px;
+    padding: 0;
 
     background-color: white;
     font-size: xx-large;
 }
+#delete {
+    font-size: x-large;
+    color: red;
+}
+
 .resizeCounter {
     position: absolute;
     height: calc(var(--resizeCounterRadius) * 2);

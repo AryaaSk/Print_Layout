@@ -9,16 +9,19 @@
     <script src="/_JS/main.js" defer></script>
     <link rel="stylesheet" href="main.css">
 </head>
-<body>
+<body class="noSelect" ontouchstart>
 
     <canvas id="paper"></canvas>
 
     <div id="transformOverlay">
-        <button id="rotateButton">⟳</button>
         <div class="resizeCounter" id="topLeftResize"></div>
         <div class="resizeCounter opposite" id="topRightResize"></div>
         <div class="resizeCounter opposite" id="bottomLeftResize"></div>
         <div class="resizeCounter" id="bottomRightResize"></div>
+
+        <button class="imageButton" id="rotateButton">⟳</button>
+        <button class="imageButton" id="bringForward">&#x2398</button>
+        <button class="imageButton" id="delete">⌫</button>
     </div>
 
     <div id="taskbar">

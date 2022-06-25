@@ -71,7 +71,7 @@ function rotate90(src) {
 const distanceBetween = (p1, p2) => {
     return Math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2);
 };
-const InitPaperListeners = (body, paper, rotateButton, resizeElements, taskbar) => {
+const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, deleteButton, resizeElements, taskbar) => {
     let pointerDown = false;
     let [prevX, prevY] = [0, 0];
     let holdingResize = undefined;
@@ -169,6 +169,12 @@ const InitPaperListeners = (body, paper, rotateButton, resizeElements, taskbar) 
             }
         }
     };
+    body.onwheel = ($e) => {
+        const damping = 1 / 400;
+        const zoomFactor = $e.deltaY * damping;
+        ZOOM += zoomFactor;
+        SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
+    };
     rotateButton.onclick = () => __awaiter(void 0, void 0, void 0, function* () {
         const img = IMAGES[SELECTED_IMAGE_INDEX];
         const rotatedBase64 = yield rotate90(img.src); //just rotating the raw data, so that we don't have to worry about the rotation later on
@@ -176,14 +182,19 @@ const InitPaperListeners = (body, paper, rotateButton, resizeElements, taskbar) 
         [img.heightMM, img.widthMM] = [img.widthMM, img.heightMM]; //swap height and width since the image is rotated 90 degrees
         UPDATE_CANVAS = true;
     });
-    body.onwheel = ($e) => {
-        const damping = 1 / 400;
-        const zoomFactor = $e.deltaY * damping;
-        ZOOM += zoomFactor;
-        SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
+    bringForwardButton.onclick = () => {
+        if (SELECTED_IMAGE_INDEX == IMAGES.length - 1) {
+            return; //it is already at the front
+        }
+        [IMAGES[SELECTED_IMAGE_INDEX], IMAGES[SELECTED_IMAGE_INDEX + 1]] = [IMAGES[SELECTED_IMAGE_INDEX + 1], IMAGES[SELECTED_IMAGE_INDEX]];
+        UPDATE_CANVAS = true;
+    };
+    deleteButton.onclick = () => {
+        IMAGES.splice(SELECTED_IMAGE_INDEX, 1);
+        UPDATE_CANVAS = true;
     };
 };
-const InitTaskbarListeners = (file, extras, print, paper) => {
+const InitTaskbarListeners = (body, file, extras, print, paper) => {
     const fileInput = document.getElementById("hiddenFile");
     file.onclick = () => {
         fileInput.click();
@@ -215,8 +226,9 @@ const InitTaskbarListeners = (file, extras, print, paper) => {
         height = pdf.internal.pageSize.getHeight();
         pdf.addImage(paper, 'PNG', 0, 0, width, height);
         const prevZoom = ZOOM;
-        ZOOM = 5;
+        ZOOM = 15;
         SizePaper(paper);
+        body.style.setProperty("pointer-events", "none");
         setTimeout(() => {
             //https://github.com/parallax/jsPDF/issues/1487
             pdf.autoPrint();
@@ -235,7 +247,8 @@ const InitTaskbarListeners = (file, extras, print, paper) => {
             }
             ZOOM = prevZoom;
             SizePaper(paper);
-        }, 1000);
+            body.style.setProperty("pointer-events", "all");
+        }, 3000);
     };
 };
 const NewImageObject = (src, height, width, leftMM, topMM) => {
@@ -305,14 +318,15 @@ const CanvasLoop = (paper, canvas, transformOverlay) => {
 const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper"), document.getElementById("taskbar")];
     const [file, extras, print] = [document.getElementById("addImage"), document.getElementById("extrasButton"), document.getElementById("printButton")];
-    const [canvas, transformOverlay, rotateButton, topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("rotateButton"), document.getElementById("topLeftResize"), document.getElementById("topRightResize"), document.getElementById("bottomLeftResize"), document.getElementById("bottomRightResize")];
+    const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("rotateButton"), document.getElementById("bringForward"), document.getElementById("delete")];
+    const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize"), document.getElementById("topRightResize"), document.getElementById("bottomLeftResize"), document.getElementById("bottomRightResize")];
     IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
     SizePaper(paper);
     FormatPaper(paper);
     PositionPaper(paper);
-    InitPaperListeners(body, paper, rotateButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
-    InitTaskbarListeners(file, extras, print, paper);
+    InitPaperListeners(body, paper, rotateButton, bringForwardButton, deleteButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
+    InitTaskbarListeners(body, file, extras, print, paper);
     CanvasLoop(paper, canvas, transformOverlay);
 };
 Main();

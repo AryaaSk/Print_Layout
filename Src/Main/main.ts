@@ -72,7 +72,7 @@ const distanceBetween = (p1: number[], p2: number[]) => {
     return Math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2);
 }
 
-const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
+const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, bringForwardButton: HTMLInputElement, deleteButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
     let pointerDown = false;
     let [prevX, prevY] = [0, 0];
 
@@ -186,6 +186,13 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         }
     }
 
+    body.onwheel = ($e) => {
+        const damping = 1 / 400;
+        const zoomFactor = $e.deltaY * damping;
+        ZOOM += zoomFactor;
+        SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
+    }
+
     rotateButton.onclick = async () => {
         const img = IMAGES[SELECTED_IMAGE_INDEX!];
         const rotatedBase64 = await rotate90(img.src); //just rotating the raw data, so that we don't have to worry about the rotation later on
@@ -194,15 +201,21 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         UPDATE_CANVAS = true;
     }
 
-    body.onwheel = ($e) => {
-        const damping = 1 / 400;
-        const zoomFactor = $e.deltaY * damping;
-        ZOOM += zoomFactor;
-        SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
+    bringForwardButton.onclick = () => { //just shift the currently selected image to the left in the IMAGES array
+        if (SELECTED_IMAGE_INDEX == IMAGES.length - 1) {
+            return; //it is already at the front
+        }
+        [IMAGES[SELECTED_IMAGE_INDEX!], IMAGES[SELECTED_IMAGE_INDEX! + 1]] = [IMAGES[SELECTED_IMAGE_INDEX! + 1], IMAGES[SELECTED_IMAGE_INDEX!]];
+        UPDATE_CANVAS = true;
+    }
+
+    deleteButton.onclick = () => {
+        IMAGES.splice(SELECTED_IMAGE_INDEX!, 1);
+        UPDATE_CANVAS = true;
     }
 }
 
-const InitTaskbarListeners = (file: HTMLInputElement, extras: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {
+const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, extras: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {
     const fileInput = <HTMLInputElement>document.getElementById("hiddenFile")!;
     file.onclick = () => {
         fileInput.click();
@@ -241,8 +254,9 @@ const InitTaskbarListeners = (file: HTMLInputElement, extras: HTMLInputElement, 
         pdf.addImage(paper, 'PNG', 0, 0,width,height);
         
         const prevZoom = ZOOM;
-        ZOOM = 5;
-        SizePaper(paper)
+        ZOOM = 15;
+        SizePaper(paper);
+        body.style.setProperty("pointer-events", "none");
 
         setTimeout(() => {
             //https://github.com/parallax/jsPDF/issues/1487
@@ -262,8 +276,9 @@ const InitTaskbarListeners = (file: HTMLInputElement, extras: HTMLInputElement, 
             }
 
             ZOOM = prevZoom;
-            SizePaper(paper)
-        }, 1000);
+            SizePaper(paper);
+            body.style.setProperty("pointer-events", "all");
+        }, 3000);
     }
 }
 
@@ -351,7 +366,8 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
 const Main = () => {
     const [body, paper, taskbar] = [document.body, <HTMLCanvasElement>document.getElementById("paper")!, document.getElementById("taskbar")!];
     const [file, extras, print] = [<HTMLInputElement>document.getElementById("addImage")!, <HTMLInputElement>document.getElementById("extrasButton")!, <HTMLInputElement>document.getElementById("printButton")!]
-    const [canvas, transformOverlay, rotateButton, topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!, document.getElementById("topLeftResize")!, document.getElementById("topRightResize")!, document.getElementById("bottomLeftResize")!, document.getElementById("bottomRightResize")!];
+    const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!, <HTMLInputElement>document.getElementById("bringForward")!, <HTMLInputElement>document.getElementById("delete")!];
+    const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize")!, document.getElementById("topRightResize")!, document.getElementById("bottomLeftResize")!, document.getElementById("bottomRightResize")!];
 
     IMAGES.push(NewImageObject("/Assets/APIs With Fetch copy.png", 1080, 1920)); //for testing
 
@@ -361,8 +377,8 @@ const Main = () => {
     FormatPaper(paper);
     PositionPaper(paper);
 
-    InitPaperListeners(body, paper, rotateButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
-    InitTaskbarListeners(file, extras, print, paper);
+    InitPaperListeners(body, paper, rotateButton, bringForwardButton, deleteButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
+    InitTaskbarListeners(body, file, extras, print, paper);
 
     CanvasLoop(paper, canvas, transformOverlay);
 }
