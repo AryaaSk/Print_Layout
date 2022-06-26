@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1,user-scalable=0"/>
     <title>Print Layout</title>
 
     <script>
@@ -26,10 +26,12 @@
         <div class="resizeCounter opposite" id="bottomLeftResize"></div>
         <div class="resizeCounter" id="bottomRightResize"></div>
 
-        <button class="imageButton" id="rotateButton">⟳</button>
-        <button class="imageButton" id="bringForward">&#x2398</button>
-        <button class="imageButton" id="delete">⌫</button>
-        <button class="imageButton" id="duplicate">&#10697</button>
+        <div id="overlayButtons">
+            <button class="imageButton" id="rotateButton">⟳</button>
+            <button class="imageButton" id="bringForward">&#10697</button>
+            <button class="imageButton" id="duplicate">&#x2398</button>
+            <button class="imageButton" id="delete">⌫</button>
+        </div>
     </div>
 
     <canvas id="paper"></canvas>

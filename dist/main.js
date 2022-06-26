@@ -22,6 +22,7 @@ const DEFAULT_IMAGE_SIZE_MM = 200;
 const TRANSFORM_OVERLAY_RESIZE_RADIUS = 15;
 let [MOUSE_X, MOUSE_Y] = [0, 0];
 let SELECTED_IMAGE_INDEX = undefined;
+let IMAGE_BUTTONS_DISABLED = true;
 let UPDATE_CANVAS = false;
 const InitHTML = (taskbar) => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -125,6 +126,9 @@ const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, delet
         initMobileControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomRightResizeElement }, taskbar);
     }
     rotateButton.onclick = () => __awaiter(void 0, void 0, void 0, function* () {
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return; //the user has just selected the item, so we dont want to immeaditely call this
+        }
         const img = IMAGES[SELECTED_IMAGE_INDEX];
         const rotatedBase64 = yield rotate90(img.src); //just rotating the raw data, so that we don't have to worry about the rotation later on
         img.src = rotatedBase64;
@@ -132,6 +136,9 @@ const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, delet
         UPDATE_CANVAS = true;
     });
     bringForwardButton.onclick = () => {
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return;
+        }
         if (SELECTED_IMAGE_INDEX == IMAGES.length - 1) {
             return; //it is already at the front
         }
@@ -139,11 +146,17 @@ const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, delet
         UPDATE_CANVAS = true;
     };
     deleteButton.onclick = () => {
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return;
+        }
         IMAGES.splice(SELECTED_IMAGE_INDEX, 1);
         SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it has been deleted
         UPDATE_CANVAS = true;
     };
     duplicateButton.onclick = () => {
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return;
+        }
         const newImage = JSON.parse(JSON.stringify(IMAGES[SELECTED_IMAGE_INDEX]));
         newImage.leftMM += DEFAULT_IMAGE_OFFSET_MM;
         newImage.topMM += DEFAULT_IMAGE_OFFSET_MM;
@@ -265,7 +278,7 @@ const CanvasLoop = (paper, canvas, transformOverlay) => {
         else if (newSelectedIndex != undefined && CheckIntersectionImage(MOUSE_X, MOUSE_Y, paper.getBoundingClientRect(), SELECTED_IMAGE_INDEX) == false) { //only change if the selected index is not being hovered over anymore
             SELECTED_IMAGE_INDEX = newSelectedIndex;
         }
-        if (SELECTED_IMAGE_INDEX != undefined) { //display transform overlay over the image, it is purely for aesthetic
+        if (SELECTED_IMAGE_INDEX != undefined) { //display transform overlay over the image
             const img = IMAGES[SELECTED_IMAGE_INDEX];
             const paperBoundingBox = paper.getBoundingClientRect();
             const [left, top] = [paperBoundingBox.left + img.leftMM * MM_PX_SF * ZOOM, paperBoundingBox.top + img.topMM * MM_PX_SF * ZOOM];
@@ -273,9 +286,15 @@ const CanvasLoop = (paper, canvas, transformOverlay) => {
             transformOverlay.style.visibility = "visible";
             [transformOverlay.style.left, transformOverlay.style.top] = [`${left}px`, `${top}px`];
             [transformOverlay.style.height, transformOverlay.style.width] = [`${height}px`, `${width}px`];
+            if (IMAGE_BUTTONS_DISABLED == true) {
+                setTimeout(() => {
+                    IMAGE_BUTTONS_DISABLED = false; //dont want to immediately fire a button click as soon as user taps
+                }, 100);
+            }
         }
         else {
             transformOverlay.style.visibility = "hidden";
+            IMAGE_BUTTONS_DISABLED = true;
         }
     }, 16);
 };

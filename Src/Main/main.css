@@ -6,6 +6,7 @@ body {
     padding: 0;
 
     --resizeCounterRadius: 15px;
+    --imageButtonSize: 50px;
     --taskbarBorderRadius: 10px;
     --taskbarWidth: 300px;
 
@@ -35,6 +36,8 @@ body {
     image-rendering: optimizeSpeed;
 }
 
+
+
 #transformOverlay {
     /* Overlays when user hovers on an element, thus size and position are set dynamically */
     position: fixed;
@@ -45,29 +48,46 @@ body {
 
     background-color: transparent;
     border: 5px solid #c4c4c4;
+    visibility: hidden;
     
     display: flex;
     align-items: center;
     justify-content: center;
-    visibility: hidden;
 
     z-index: 1;
     transform: translate3d(0, 0, 0);
 }
 
+#overlayButtons {
+    height: 100%;
+    width: 100%;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fit, var(--imageButtonSize));
+    grid-auto-rows: var(--imageButtonSize);
+    gap: 7px;
+    place-content: center;
+}
+
 .imageButton {
-    height: 50px;
-    width: 50px;
-    margin: 5px;
+    height: var(--imageButtonSize);
+    width: var(--imageButtonSize);
     padding: 0;
 
-    background-color: white;
-    border: 1px solid black;
+    background-color: #c4c4c4;
+    opacity: 95%;
+    border: none;
+    border-radius: calc(var(--imageButtonSize) / 10);
+
     font-size: xx-large;
+    font-weight: bold;
     color: black;
+
+    -webkit-tap-highlight-color: transparent;
 }
 #delete {
     font-size: x-large;
+    font-weight: normal;
     color: red;
 }
 
@@ -149,10 +169,13 @@ body {
 
 
 @media only screen and (hover: none) and (pointer: coarse){ /* Mobile Specific */
+    .imageButton:active {
+        background-color: #888888;
+    }
+
     #taskbar {
         bottom: 20px;
     }
-
     .taskbarButton:active {
         background-color: #2a2a2a;    
     }
@@ -160,6 +183,10 @@ body {
 
 
 @media not screen and (hover: none) and (pointer: coarse) { /* Desktop Specific */
+    .imageButton:hover {
+        background-color: #888888;
+    }
+
     .taskbarButton:hover{
         background-color: #2a2a2a;
     } 
