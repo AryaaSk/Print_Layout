@@ -115,7 +115,7 @@ body {
     width: var(--taskbarWidth);
 
     display: grid;
-    grid-template-columns: 33% 34% 33%;
+    grid-template-columns: 50% 50%;
     grid-template-rows: 100%;
     place-items: center;
 

@@ -20,19 +20,19 @@ const initMobileControls = (body: HTMLElement, paper: HTMLCanvasElement, resizeE
             const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [[topLeftBoundingBox.left + radiusPX, topLeftBoundingBox.top + radiusPX], [topRightBoundingBox.left + radiusPX, topRightBoundingBox.top + radiusPX], [bottomLeftBoundingBox.left + radiusPX, bottomLeftBoundingBox.top + radiusPX], [bottomRightBoundingBox.left + radiusPX, bottomRightBoundingBox.top + radiusPX]];
 
             holdingResize = undefined;
-            if (distanceBetween(topLeftResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) { //calculate new distance between mouse position and bottom left, and resize based on that
+            if (distanceBetween(topLeftResize, mousePosition) <= radiusPX + 5) { //calculate new distance between mouse position and bottom left, and resize based on that
                 holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topLeft" };
                 oppositeCorner = [bottomRightResize[0] + radiusPX, bottomRightResize[1] + radiusPX];
             }
-            else if (distanceBetween(topRightResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) {
+            else if (distanceBetween(topRightResize, mousePosition) <= radiusPX + 5) {
                 holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topRight" };
                 oppositeCorner = [bottomLeftResize[0] - radiusPX, bottomLeftResize[1] + radiusPX];
             }
-            else if (distanceBetween(bottomLeftResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) {
+            else if (distanceBetween(bottomLeftResize, mousePosition) <= radiusPX + 5) {
                 holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomLeft" };
                 oppositeCorner = [topRightResize[0] + radiusPX, topRightResize[1] - radiusPX];
             }
-            else if (distanceBetween(bottomRightResize, mousePosition) <= TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI + 5) {
+            else if (distanceBetween(bottomRightResize, mousePosition) <= radiusPX + 5) {
                 holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomRight" };
                 oppositeCorner = [topLeftResize[0] - radiusPX, topLeftResize[1] - radiusPX];
             }

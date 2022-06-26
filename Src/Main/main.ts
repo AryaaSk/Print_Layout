@@ -175,7 +175,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
     }
 }
 
-const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, extras: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {
+const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {
     const fileInput = <HTMLInputElement>document.getElementById("hiddenFile")!;
     file.onclick = () => {
         fileInput.click();
@@ -183,10 +183,6 @@ const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, extras:
     fileInput.onchange = () => {
         const files = fileInput.files!;
         ParseFiles(files)
-    }
-
-    extras.onclick = () => {
-        console.log("Handle extra options")
     }
 
     print.onclick = () => {
@@ -332,11 +328,11 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
 
 const Main = () => {
     const [body, paper, taskbar] = [document.body, <HTMLCanvasElement>document.getElementById("paper")!, document.getElementById("taskbar")!];
-    const [file, extras, print] = [<HTMLInputElement>document.getElementById("addImage")!, <HTMLInputElement>document.getElementById("extrasButton")!, <HTMLInputElement>document.getElementById("printButton")!]
+    const [file, print] = [<HTMLInputElement>document.getElementById("addImage")!, <HTMLInputElement>document.getElementById("printButton")!]
     const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton, duplicateButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!, <HTMLInputElement>document.getElementById("bringForward")!, <HTMLInputElement>document.getElementById("delete")!, <HTMLInputElement>document.getElementById("duplicate")!];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize")!, document.getElementById("topRightResize")!, document.getElementById("bottomLeftResize")!, document.getElementById("bottomRightResize")!];
 
-    //IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
+    IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
 
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
     InitHTML(taskbar);
@@ -346,7 +342,7 @@ const Main = () => {
     PositionPaper(paper);
 
     InitPaperListeners(body, paper, rotateButton, bringForwardButton, deleteButton, duplicateButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
-    InitTaskbarListeners(body, file, extras, print, paper);
+    InitTaskbarListeners(body, file, print, paper);
 
     CanvasLoop(paper, canvas, transformOverlay);
 }
