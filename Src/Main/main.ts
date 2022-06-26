@@ -347,7 +347,7 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
             [transformOverlay.style.left, transformOverlay.style.top] = [`${left}px`, `${top}px`];
             [transformOverlay.style.height, transformOverlay.style.width] = [`${height}px`, `${width}px`];
 
-            if (IMAGE_BUTTONS_DISABLED == true) {
+            if (IMAGE_BUTTONS_DISABLED == true) {    
                 setTimeout(() => {
                     IMAGE_BUTTONS_DISABLED = false; //dont want to immediately fire a button click as soon as user taps
                 }, 100);
@@ -368,7 +368,7 @@ const Main = () => {
     const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton, duplicateButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!, <HTMLInputElement>document.getElementById("bringForward")!, <HTMLInputElement>document.getElementById("delete")!, <HTMLInputElement>document.getElementById("duplicate")!];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize")!, document.getElementById("topRightResize")!, document.getElementById("bottomLeftResize")!, document.getElementById("bottomRightResize")!];
 
-    IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
+    //IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
 
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
     InitHTML(taskbar);
