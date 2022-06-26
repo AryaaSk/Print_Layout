@@ -294,6 +294,9 @@
 				DEVELOPMENT_TEAM = R7WQ479X2H;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Print_Layout/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Print Layout";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires access to the camera.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app requires access to the photo library.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -322,6 +325,9 @@
 				DEVELOPMENT_TEAM = R7WQ479X2H;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Print_Layout/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Print Layout";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires access to the camera.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app requires access to the photo library.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
