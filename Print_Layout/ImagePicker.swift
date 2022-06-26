@@ -34,7 +34,12 @@ class ImagePickerManager: NSObject, UIImagePickerControllerDelegate, UINavigatio
         pickImageCallback = callback;
         self.viewController = viewController;
         
-        alert = UIAlertController(title: "Choose Image", message: nil, preferredStyle: .actionSheet)
+        if UIDevice.current.userInterfaceIdiom == .phone { //actionSheet doesnt work on iPad
+            alert = UIAlertController(title: "Choose Image", message: nil, preferredStyle: .actionSheet)
+        }
+        else {
+            alert = UIAlertController(title: "Choose Image", message: nil, preferredStyle: .alert)
+        }
         
         let pasteAction = UIAlertAction(title: "Paste", style: .default) { UIAlertAction in
             self.pasteItem()

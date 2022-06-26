@@ -20,6 +20,7 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
         //let url = "http://127.0.0.1:8080/main.html?hideTaskbar=true" //change to actual url later
         let url = "https://aryaask.github.io/Print_Layout/dist/main.html?hideTaskbar=true" //github pages url
         let request = URLRequest(url: URL(string: url)!)
+        webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1"
         webView.load(request)
     }
     
