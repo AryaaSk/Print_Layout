@@ -25,20 +25,23 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
     
     
     
-    @IBAction func newImage(_ sender: Any) { //take UIImage from local device, and upload into program with the base64 encoded string.
+    @IBAction func newImage(_ sender: Any) {
         ImagePickerManager().pickImage(self){ image in
-            
-            let imageData = image.jpegData(compressionQuality: 0.8)!;
-            let imageSrc = "data:image/png;base64, " + imageData.base64EncodedString()
-            let height = Int(image.size.height * image.scale)
-            let width = Int(image.size.width * image.scale)
-             
-            let jsCode = """
+            self.uploadImage(image: image)
+        }
+    }
+    
+    func uploadImage(image: UIImage) {  //take UIImage from local device, and upload into program with the base64 encoded string.
+        let imageData = image.jpegData(compressionQuality: 0.8)!; //cant use png since it doesnt remember the orientation of the image
+        let imageSrc = "data:image/png;base64, " + imageData.base64EncodedString()
+        let height = Int(image.size.height * image.scale)
+        let width = Int(image.size.width * image.scale)
+        
+        let jsCode = """
 IMAGES.push(NewImageObject("\(imageSrc)", \(String(height)), \(String(width))));
 UPDATE_CANVAS = true;
 """
-            self.webView.evaluateJavaScript(jsCode)
-        }
+        self.webView.evaluateJavaScript(jsCode)
     }
     
     
@@ -71,7 +74,6 @@ UPDATE_CANVAS = true;
         }
     }
     
-
 }
 
 extension WKWebView { //https://stackoverflow.com/questions/26778955/wkwebview-evaluate-javascript-return-value

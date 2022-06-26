@@ -173,17 +173,6 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         const files = dT.files!;
         ParseFiles(files);
     }
-
-    /*
-    body.ondrop = ($e) => { //doesnt work yet
-        $e.stopPropagation();
-        $e.preventDefault(); 
-
-        const dT = $e.dataTransfer!;
-        const files = dT.files!;
-        ParseFiles(files);
-    }
-    */
 }
 
 const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, extras: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {

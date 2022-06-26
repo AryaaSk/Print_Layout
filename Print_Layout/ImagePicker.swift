@@ -1,4 +1,5 @@
-//https://stackoverflow.com/questions/25510081/how-to-allow-user-to-pick-the-image-with-swift
+//Originally from here: https://stackoverflow.com/questions/25510081/how-to-allow-user-to-pick-the-image-with-swift
+//I added a paste option
 
 import Foundation
 import UIKit
@@ -13,28 +14,43 @@ class ImagePickerManager: NSObject, UIImagePickerControllerDelegate, UINavigatio
     
     override init(){
         super.init()
-        let cameraAction = UIAlertAction(title: "Camera", style: .default){
-            UIAlertAction in
-            self.openCamera()
-        }
-        let galleryAction = UIAlertAction(title: "Gallery", style: .default){
-            UIAlertAction in
-            self.openGallery()
-        }
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel){
-            UIAlertAction in
-        }
-        
-        // Add the actions
         picker.delegate = self
-        alert.addAction(cameraAction)
-        alert.addAction(galleryAction)
-        alert.addAction(cancelAction)
+    }
+    
+    
+    func pasteItem() { //just paste whatever is in the clipboard, the website will handle the rest
+        if UIPasteboard.general.hasImages == true {
+            let image = UIPasteboard.general.images![0]
+            pickImageCallback?(image)
+        }
+        else {
+            let alert = UIAlertController(title: "No Image Available", message: "You do not have any images in your clipboard", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Ok", style: .cancel))
+            self.viewController!.present(alert, animated: true)
+        }
     }
     
     func pickImage(_ viewController: UIViewController, _ callback: @escaping ((UIImage) -> ())) {
         pickImageCallback = callback;
         self.viewController = viewController;
+        
+        alert = UIAlertController(title: "Choose Image", message: nil, preferredStyle: .actionSheet)
+        
+        let pasteAction = UIAlertAction(title: "Paste", style: .default) { UIAlertAction in
+            self.pasteItem()
+        }
+        let cameraAction = UIAlertAction(title: "Camera", style: .default){ UIAlertAction in
+            self.openCamera()
+        }
+        let galleryAction = UIAlertAction(title: "Gallery", style: .default){ UIAlertAction in
+            self.openGallery()
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel){ UIAlertAction in }
+        
+        alert.addAction(pasteAction)
+        alert.addAction(cameraAction)
+        alert.addAction(galleryAction)
+        alert.addAction(cancelAction)
         
         alert.popoverPresentationController?.sourceView = self.viewController!.view
         
@@ -47,7 +63,7 @@ class ImagePickerManager: NSObject, UIImagePickerControllerDelegate, UINavigatio
             self.viewController!.present(picker, animated: true, completion: nil)
         } else {
             let alertController: UIAlertController = {
-                let controller = UIAlertController(title: "Warning", message: "You don't have camera", preferredStyle: .alert)
+                let controller = UIAlertController(title: "Unable to use Camera", message: "You don't have camera", preferredStyle: .alert)
                 let action = UIAlertAction(title: "OK", style: .default)
                 controller.addAction(action)
                 return controller
