@@ -24,6 +24,8 @@ let [MOUSE_X, MOUSE_Y] = [0, 0];
 let SELECTED_IMAGE_INDEX = undefined;
 let IMAGE_BUTTONS_DISABLED = true;
 let UPDATE_CANVAS = false;
+let LOOP_COUNT = 0;
+const UPDATE_CANVAS_TICK = (isMobile == false) ? 3 : 4; //update canvas slower on mobile since it is less powerful
 const InitHTML = (taskbar) => {
     const urlParams = new URLSearchParams(window.location.search);
     const hideTaskbar = urlParams.get('hideTaskbar');
@@ -264,10 +266,18 @@ const PrintCanvas = (body, paper) => {
 };
 const CanvasLoop = (paper, canvas, transformOverlay) => {
     setInterval(() => {
-        if (UPDATE_CANVAS == true) {
-            DrawImages(canvas);
-            UPDATE_CANVAS = false;
+        if (LOOP_COUNT == UPDATE_CANVAS_TICK) { //only redraw images every (UPDATE_CANVAS_TICK) ticks, but update other things at regular 60fps to keep UI smooth
+            //1 = every tick
+            //2 = every 2nd tick
+            //3 = every 3rd tick
+            //etc...
+            if (UPDATE_CANVAS == true) {
+                DrawImages(canvas);
+                UPDATE_CANVAS = false;
+            }
+            LOOP_COUNT = 0;
         }
+        LOOP_COUNT += 1;
         const newSelectedIndex = CheckForHover(paper);
         if (newSelectedIndex != undefined && SELECTED_IMAGE_INDEX == undefined) { //dont want to change the selected index to another index if the user is already selected one
             SELECTED_IMAGE_INDEX = newSelectedIndex;
@@ -303,7 +313,7 @@ const Main = () => {
     const [file, print] = [document.getElementById("addImage"), document.getElementById("printButton")];
     const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton, duplicateButton] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("rotateButton"), document.getElementById("bringForward"), document.getElementById("delete"), document.getElementById("duplicate")];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize"), document.getElementById("topRightResize"), document.getElementById("bottomLeftResize"), document.getElementById("bottomRightResize")];
-    //IMAGES.push(NewImageObject("performanceTest.png", 1496, 1200)); //for testing
+    IMAGES.push(NewImageObject("performanceTest.png", 1496, 1200)); //for testing
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
     InitHTML(taskbar);
     FitToScreen();

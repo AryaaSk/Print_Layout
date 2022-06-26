@@ -18,7 +18,10 @@ const TRANSFORM_OVERLAY_RESIZE_RADIUS = 15;
 let [MOUSE_X, MOUSE_Y] = [0, 0];
 let SELECTED_IMAGE_INDEX: number | undefined = undefined;
 let IMAGE_BUTTONS_DISABLED = true;
+
 let UPDATE_CANVAS = false;
+let LOOP_COUNT = 0;
+const UPDATE_CANVAS_TICK = (isMobile == false) ? 3 : 4; //update canvas slower on mobile since it is less powerful
 
 
 const InitHTML = (taskbar: HTMLElement) => {
@@ -308,10 +311,19 @@ const PrintCanvas = (body: HTMLElement, paper: HTMLCanvasElement) => {
 
 const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, transformOverlay: HTMLElement) => { //This seems to work better than individually updating the canvas everytime there's a change, but there is still a bit of flickering
     setInterval(() => {
-        if (UPDATE_CANVAS == true) {
-            DrawImages(canvas);
-            UPDATE_CANVAS = false;
+        if (LOOP_COUNT == UPDATE_CANVAS_TICK) { //only redraw images every (UPDATE_CANVAS_TICK) ticks, but update other things at regular 60fps to keep UI smooth
+            //1 = every tick
+            //2 = every 2nd tick
+            //3 = every 3rd tick
+            //etc...
+
+            if (UPDATE_CANVAS == true) {
+                DrawImages(canvas);
+                UPDATE_CANVAS = false;
+            }
+            LOOP_COUNT = 0;
         }
+        LOOP_COUNT += 1;
 
         const newSelectedIndex = CheckForHover(paper);
         if (newSelectedIndex != undefined && SELECTED_IMAGE_INDEX == undefined) { //dont want to change the selected index to another index if the user is already selected one
@@ -356,7 +368,7 @@ const Main = () => {
     const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton, duplicateButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!, <HTMLInputElement>document.getElementById("bringForward")!, <HTMLInputElement>document.getElementById("delete")!, <HTMLInputElement>document.getElementById("duplicate")!];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize")!, document.getElementById("topRightResize")!, document.getElementById("bottomLeftResize")!, document.getElementById("bottomRightResize")!];
 
-    //IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
+    IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
 
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
     InitHTML(taskbar);
