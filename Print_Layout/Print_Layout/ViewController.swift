@@ -27,7 +27,10 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
     }
     
     @objc func gotData(notification: NSNotification) {
-        print(notification.userInfo!["url"]!)
+        let url = notification.userInfo!["url"]!
+        UIApplication.shared.open(URL(string: url as! String)!)
+        
+        //open this file as an image and just upload it
         
         //webView.load(URLRequest(url: URL(string: "https://www.google.com")!))
     }

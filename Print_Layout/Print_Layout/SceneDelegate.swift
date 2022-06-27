@@ -20,6 +20,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        print(URLContexts)
         NotificationCenter.default.post(name: NSNotification.Name("gotImage"), object: nil, userInfo: ["url": URLContexts.first!.url]) //only opening 1 file for now
     }
 
