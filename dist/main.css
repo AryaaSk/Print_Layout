@@ -62,9 +62,10 @@ body {
 
 #imageSize {
     position: absolute;
-    top: -30px;
+    top: -40px;
 
-    font-size: large;
+    color: #888888;;
+    font-size: x-large;
     white-space: nowrap;
     overflow: hidden;
 }
