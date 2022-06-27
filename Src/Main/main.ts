@@ -87,19 +87,20 @@ const CheckIntersectionElement = (x: number, y: number, element: HTMLElement) =>
     }
     return false;
 }
-const CheckIntersectionImage = (x: number, y: number, paperBoundingBox: DOMRect, imageIndex: number) => {
+const CheckIntersectionImage = (x: number, y: number, paperBoundingBox: DOMRect, imageIndex: number, margin?: number) => {
+    const imageMargin = (margin == undefined) ? 0 : margin;
     const img = IMAGES[imageIndex];
-    const [left, right, top, bottom] = [paperBoundingBox.left + img.leftMM * MM_PX_SF * ZOOM, paperBoundingBox.left + img.leftMM * MM_PX_SF * ZOOM + img.widthMM * MM_PX_SF * ZOOM, paperBoundingBox.top + img.topMM * MM_PX_SF * ZOOM, paperBoundingBox.top + img.topMM * MM_PX_SF * ZOOM + img.heightMM * MM_PX_SF * ZOOM];
+    const [left, right, top, bottom] = [paperBoundingBox.left + img.leftMM * MM_PX_SF * ZOOM - imageMargin, paperBoundingBox.left + img.leftMM * MM_PX_SF * ZOOM + img.widthMM * MM_PX_SF * ZOOM + imageMargin, paperBoundingBox.top + img.topMM * MM_PX_SF * ZOOM - imageMargin, paperBoundingBox.top + img.topMM * MM_PX_SF * ZOOM + img.heightMM * MM_PX_SF * ZOOM + imageMargin];
     if (x > left && x < right && y > top && y < bottom) {
         return true;
     }
     return false;
 }
-const CheckForHover = (paper: HTMLCanvasElement) => {
+const CheckForHover = (paper: HTMLCanvasElement, margin: number) => {
     const paperBoundingBox = paper.getBoundingClientRect();
     let selectedImage: number | undefined = undefined;
     for (let i = 0; i != IMAGES.length; i += 1) {
-        if (CheckIntersectionImage(MOUSE_X, MOUSE_Y, paperBoundingBox, i) == true) {
+        if (CheckIntersectionImage(MOUSE_X, MOUSE_Y, paperBoundingBox, i, margin) == true) {
             selectedImage = i;
         }
     }
@@ -193,6 +194,19 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         const files = dT.files!;
         ParseFiles(files);
     }
+
+    //Drag and drop images: https://jsfiddle.net/zever/EcxSm/
+    paper.addEventListener('dragenter', ($e: any) => { $e.stopPropagation(); $e.preventDefault() }, false);
+    paper.addEventListener('dragexit', ($e: any) => { $e.stopPropagation(); $e.preventDefault() }, false);
+    paper.addEventListener('dragover', ($e: any) => { $e.stopPropagation(); $e.preventDefault() }, false);
+    paper.addEventListener('drop', ($e) => {
+
+        $e.stopPropagation();
+        $e.preventDefault(); 
+        var files = $e.dataTransfer!.files;
+        ParseFiles(files);
+
+    }, false)
 }
 
 const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {
@@ -325,7 +339,7 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
         }
         LOOP_COUNT += 1;
 
-        const newSelectedIndex = CheckForHover(paper);
+        const newSelectedIndex = CheckForHover(paper, TRANSFORM_OVERLAY_RESIZE_RADIUS / 2); //added the margin so that the user can still select the resize counter even when not hovering over the actual image
         if (newSelectedIndex != undefined && SELECTED_IMAGE_INDEX == undefined) { //dont want to change the selected index to another index if the user is already selected one
             SELECTED_IMAGE_INDEX = newSelectedIndex;
         }
