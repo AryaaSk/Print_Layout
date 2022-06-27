@@ -324,7 +324,7 @@ const PrintCanvas = (body: HTMLElement, paper: HTMLCanvasElement) => {
 
 
 
-const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, transformOverlay: HTMLElement) => { //This seems to work better than individually updating the canvas everytime there's a change, but there is still a bit of flickering
+const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, transformOverlay: HTMLElement, imageSize: HTMLElement) => { //This seems to work better than individually updating the canvas everytime there's a change, but there is still a bit of flickering
     setInterval(() => {
         if (LOOP_COUNT == UPDATE_CANVAS_TICK) { //only redraw images every (UPDATE_CANVAS_TICK) ticks, but update other things at regular 60fps to keep UI smooth
             //1 = every tick
@@ -361,6 +361,7 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
             transformOverlay.style.visibility = "visible";
             [transformOverlay.style.left, transformOverlay.style.top] = [`${left}px`, `${top}px`];
             [transformOverlay.style.height, transformOverlay.style.width] = [`${height}px`, `${width}px`];
+            imageSize.innerText = `${Math.round(img.widthMM)}mm X ${Math.round(img.heightMM)}mm`;
 
             if (IMAGE_BUTTONS_DISABLED == true) {    
                 setTimeout(() => {
@@ -380,7 +381,7 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
 const Main = () => {
     const [body, paper, taskbar] = [document.body, <HTMLCanvasElement>document.getElementById("paper")!, document.getElementById("taskbar")!];
     const [file, print] = [<HTMLInputElement>document.getElementById("addImage")!, <HTMLInputElement>document.getElementById("printButton")!]
-    const [canvas, transformOverlay, rotateButton, bringForwardButton, deleteButton, duplicateButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, <HTMLInputElement>document.getElementById("rotateButton")!, <HTMLInputElement>document.getElementById("bringForward")!, <HTMLInputElement>document.getElementById("delete")!, <HTMLInputElement>document.getElementById("duplicate")!];
+    const [canvas, transformOverlay, imageSize, rotateButton, bringForwardButton, deleteButton, duplicateButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, document.getElementById("imageSize")!, <HTMLInputElement>document.getElementById("rotateButton")!, <HTMLInputElement>document.getElementById("bringForward")!, <HTMLInputElement>document.getElementById("delete")!, <HTMLInputElement>document.getElementById("duplicate")!];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize")!, document.getElementById("topRightResize")!, document.getElementById("bottomLeftResize")!, document.getElementById("bottomRightResize")!];
 
     //IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
@@ -395,7 +396,7 @@ const Main = () => {
     InitPaperListeners(body, paper, rotateButton, bringForwardButton, deleteButton, duplicateButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
     InitTaskbarListeners(body, file, print, paper);
 
-    CanvasLoop(paper, canvas, transformOverlay);
+    CanvasLoop(paper, canvas, transformOverlay, imageSize);
 }
 
 Main();
