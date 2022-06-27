@@ -22,17 +22,6 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
         let request = URLRequest(url: URL(string: url)!)
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1"
         webView.load(request)
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(self.gotData), name: Notification.Name("gotImage"), object: nil)
-    }
-    
-    @objc func gotData(notification: NSNotification) {
-        let url = notification.userInfo!["url"]!
-        UIApplication.shared.open(URL(string: url as! String)!)
-        
-        //open this file as an image and just upload it
-        
-        //webView.load(URLRequest(url: URL(string: "https://www.google.com")!))
     }
     
     

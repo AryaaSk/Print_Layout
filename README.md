@@ -13,7 +13,7 @@ Here are a few links to handle the 'Open With' feature of iOS:
 - https://medium.com/macoclock/ios-share-extension-swift-5-1-1606263746b
 - https://stackoverflow.com/questions/69926336/how-to-handle-a-file-shared-from-another-app-to-my-own-ios-app
 - https://stackoverflow.com/questions/49154366/how-to-handle-a-file-sent-with-open-in-from-another-app-to-my-own-ios-app
-*Unfortunately after trying a lot, I could not figure out how to open an image from the photos app directly into this app, this would have been a very useful feature, but it seems like the only option is to make an embedded app inside a Share extension. Even after making the app open from the files app, I was not able to use the URL to actually access the image*
+*Unfortunately after trying a lot, I could not figure out how to open an image from the photos or safari app directly into this app, this would have been a very useful feature, but it seems like the only option is to make an embedded app inside a Share Extension. Even after making the app open from the files app, I was not able to use the URL to actually access the image*
 
 Here are a few links to load a UIImage into a Website with Webkit:
 - https://stackoverflow.com/questions/38743604/wkwebview-insert-uiimage-into-web-page
