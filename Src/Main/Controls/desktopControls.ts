@@ -55,8 +55,9 @@ const initDesktopControls = (body: HTMLElement, paper: HTMLCanvasElement, resize
             [prevX, prevY] = [MOUSE_X, MOUSE_Y];
 
             if (SELECTED_IMAGE_INDEX == undefined) {
-                PAPER_VELOCITY.left = deltaX * 10;
-                PAPER_VELOCITY.top = deltaY * 10; //paper is positioned in canvas loop
+                PAPER_POSITION.left += deltaX;
+                PAPER_POSITION.top += deltaY;
+                PositionPaper(paper);
             }
             else {
                 const img = IMAGES[SELECTED_IMAGE_INDEX];

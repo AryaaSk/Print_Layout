@@ -46,8 +46,9 @@ const initDesktopControls = (body, paper, resizeElements, taskbar) => {
             const [deltaX, deltaY] = [MOUSE_X - prevX, MOUSE_Y - prevY];
             [prevX, prevY] = [MOUSE_X, MOUSE_Y];
             if (SELECTED_IMAGE_INDEX == undefined) {
-                PAPER_VELOCITY.left = deltaX * 10;
-                PAPER_VELOCITY.top = deltaY * 10; //paper is positioned in canvas loop
+                PAPER_POSITION.left += deltaX;
+                PAPER_POSITION.top += deltaY;
+                PositionPaper(paper);
             }
             else {
                 const img = IMAGES[SELECTED_IMAGE_INDEX];
