@@ -9,6 +9,8 @@ This utility will allow you to quickly import 1 or more photos, and view their l
 
 I am planning to add a mobile app, since it is even harder for a user to change an image's size there, however first I will create a website.\
 Here are a few links to handle the 'Open With' feature of iOS:
+- https://stackoverflow.com/questions/13106461/how-to-open-image-in-my-ios-app-from-another-app
+- https://medium.com/macoclock/ios-share-extension-swift-5-1-1606263746b
 - https://stackoverflow.com/questions/69926336/how-to-handle-a-file-shared-from-another-app-to-my-own-ios-app
 - https://stackoverflow.com/questions/49154366/how-to-handle-a-file-sent-with-open-in-from-another-app-to-my-own-ios-app
 

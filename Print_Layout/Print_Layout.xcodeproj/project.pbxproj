@@ -16,6 +16,19 @@
 		E409AB5528672D1F00CFD657 /* ImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E409AB5428672D1F00CFD657 /* ImagePicker.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		E409AB68286A054900CFD657 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		E409AB3D286729F800CFD657 /* Print_Layout.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Print_Layout.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E409AB40286729F800CFD657 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -80,6 +93,7 @@
 				E409AB39286729F800CFD657 /* Sources */,
 				E409AB3A286729F800CFD657 /* Frameworks */,
 				E409AB3B286729F800CFD657 /* Resources */,
+				E409AB68286A054900CFD657 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
@@ -290,7 +304,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = R7WQ479X2H;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Print_Layout/Info.plist;
@@ -322,7 +336,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = R7WQ479X2H;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Print_Layout/Info.plist;
