@@ -52,7 +52,7 @@ const initMobileControls = (body: HTMLElement, paper: HTMLCanvasElement, resizeE
             [prevX, prevY] = [MOUSE_X, MOUSE_Y];
 
             if (SELECTED_IMAGE_INDEX == undefined) {
-                PAPER_POSITION.left += deltaX;
+                PAPER_POSITION.left += deltaX; //cant use velocity on mobile since the screen size and DPI are unpredictable
                 PAPER_POSITION.top += deltaY;
                 PositionPaper(paper);
             }

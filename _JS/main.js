@@ -9,6 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
+const PAPER_VELOCITY = { left: 0, top: 0 };
+const PAPER_FRICTION_MULTIPLIER = 0.9;
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
 const DEFAULT_PAPER_MARGIN_PX = 50;
@@ -289,6 +291,13 @@ const CanvasLoop = (paper, canvas, transformOverlay) => {
             LOOP_COUNT = 0;
         }
         LOOP_COUNT += 1;
+        if (isMobile == false) {
+            PAPER_POSITION.left += PAPER_VELOCITY.left;
+            PAPER_POSITION.top += PAPER_VELOCITY.top;
+            PositionPaper(paper);
+            PAPER_VELOCITY.left *= PAPER_FRICTION_MULTIPLIER;
+            PAPER_VELOCITY.top *= PAPER_FRICTION_MULTIPLIER;
+        }
         const newSelectedIndex = CheckForHover(paper, TRANSFORM_OVERLAY_RESIZE_RADIUS / 2); //added the margin so that the user can still select the resize counter even when not hovering over the actual image
         if (newSelectedIndex != undefined && SELECTED_IMAGE_INDEX == undefined) { //dont want to change the selected index to another index if the user is already selected one
             SELECTED_IMAGE_INDEX = newSelectedIndex;
