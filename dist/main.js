@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
@@ -121,68 +112,6 @@ function rotate90(src) {
 const distanceBetween = (p1, p2) => {
     return Math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2);
 };
-const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, deleteButton, duplicateButton, resizeElements, taskbar) => {
-    if (isMobile == false) {
-        initDesktopControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomRightResizeElement }, taskbar);
-    }
-    else {
-        initMobileControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomRightResizeElement }, taskbar);
-    }
-    rotateButton.onclick = () => __awaiter(void 0, void 0, void 0, function* () {
-        if (IMAGE_BUTTONS_DISABLED == true) {
-            return; //the user has just selected the item, so we dont want to immeaditely call this
-        }
-        const img = IMAGES[SELECTED_IMAGE_INDEX];
-        const rotatedBase64 = yield rotate90(img.src); //just rotating the raw data, so that we don't have to worry about the rotation later on
-        img.src = rotatedBase64;
-        [img.heightMM, img.widthMM] = [img.widthMM, img.heightMM]; //swap height and width since the image is rotated 90 degrees
-        UPDATE_CANVAS = true;
-    });
-    bringForwardButton.onclick = () => {
-        if (IMAGE_BUTTONS_DISABLED == true) {
-            return;
-        }
-        if (SELECTED_IMAGE_INDEX == IMAGES.length - 1) {
-            return; //it is already at the front
-        }
-        [IMAGES[SELECTED_IMAGE_INDEX], IMAGES[SELECTED_IMAGE_INDEX + 1]] = [IMAGES[SELECTED_IMAGE_INDEX + 1], IMAGES[SELECTED_IMAGE_INDEX]];
-        UPDATE_CANVAS = true;
-    };
-    deleteButton.onclick = () => {
-        if (IMAGE_BUTTONS_DISABLED == true) {
-            return;
-        }
-        IMAGES.splice(SELECTED_IMAGE_INDEX, 1);
-        SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it has been deleted
-        UPDATE_CANVAS = true;
-    };
-    duplicateButton.onclick = () => {
-        if (IMAGE_BUTTONS_DISABLED == true) {
-            return;
-        }
-        const newImage = JSON.parse(JSON.stringify(IMAGES[SELECTED_IMAGE_INDEX]));
-        newImage.leftMM += DEFAULT_IMAGE_OFFSET_MM;
-        newImage.topMM += DEFAULT_IMAGE_OFFSET_MM;
-        IMAGES.push(newImage);
-        SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it will go to the duplicated image.
-        UPDATE_CANVAS = true;
-    };
-    document.onpaste = ($e) => {
-        const dT = $e.clipboardData;
-        const files = dT.files;
-        ParseFiles(files);
-    };
-    //Drag and drop images: https://jsfiddle.net/zever/EcxSm/
-    paper.addEventListener('dragenter', ($e) => { $e.stopPropagation(); $e.preventDefault(); }, false);
-    paper.addEventListener('dragexit', ($e) => { $e.stopPropagation(); $e.preventDefault(); }, false);
-    paper.addEventListener('dragover', ($e) => { $e.stopPropagation(); $e.preventDefault(); }, false);
-    paper.addEventListener('drop', ($e) => {
-        $e.stopPropagation();
-        $e.preventDefault();
-        var files = $e.dataTransfer.files;
-        ParseFiles(files);
-    }, false);
-};
 const InitTaskbarListeners = (body, file, print, paper) => {
     const fileInput = document.getElementById("hiddenFile");
     file.onclick = () => {
@@ -236,6 +165,7 @@ const DrawImages = (canvas) => {
         };
     }
 };
+//SELECT 'FIT TO PAPER' OPTION, AND MAKE SURE PAPER SIZE IS A4
 const PrintCanvas = (body, paper) => {
     let width = paper.width;
     let height = paper.height;
@@ -289,16 +219,6 @@ const CanvasLoop = (paper, canvas, transformOverlay, imageSize) => {
             LOOP_COUNT = 0;
         }
         LOOP_COUNT += 1;
-        const newSelectedIndex = CheckForHover(paper, TRANSFORM_OVERLAY_RESIZE_RADIUS / 2); //added the margin so that the user can still select the resize counter even when not hovering over the actual image
-        if (newSelectedIndex != undefined && SELECTED_IMAGE_INDEX == undefined) { //dont want to change the selected index to another index if the user is already selected one
-            SELECTED_IMAGE_INDEX = newSelectedIndex;
-        }
-        else if (newSelectedIndex == undefined && SELECTED_IMAGE_INDEX != undefined) {
-            SELECTED_IMAGE_INDEX = newSelectedIndex;
-        }
-        else if (newSelectedIndex != undefined && CheckIntersectionImage(MOUSE_X, MOUSE_Y, paper.getBoundingClientRect(), SELECTED_IMAGE_INDEX) == false) { //only change if the selected index is not being hovered over anymore
-            SELECTED_IMAGE_INDEX = newSelectedIndex;
-        }
         if (SELECTED_IMAGE_INDEX != undefined) { //display transform overlay over the image
             const img = IMAGES[SELECTED_IMAGE_INDEX];
             const paperBoundingBox = paper.getBoundingClientRect();
@@ -325,10 +245,16 @@ const Main = () => {
     const [file, print] = [document.getElementById("addImage"), document.getElementById("printButton")];
     const [canvas, transformOverlay, imageSize, rotateButton, bringForwardButton, deleteButton, duplicateButton] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("imageSize"), document.getElementById("rotateButton"), document.getElementById("bringForward"), document.getElementById("delete"), document.getElementById("duplicate")];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize"), document.getElementById("topRightResize"), document.getElementById("bottomLeftResize"), document.getElementById("bottomRightResize")];
-    //IMAGES.push(NewImageObject("performanceTest.png", 1496, 1200)); //for testing
+    IMAGES.push(NewImageObject("performanceTest.png", 1496, 1200)); //for testing
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
     InitHTML(taskbar);
     FitToScreen();
+    window.onresize = () => {
+        FitToScreen();
+        SizePaper(paper);
+        PositionPaper(paper);
+        UPDATE_CANVAS = true;
+    };
     SizePaper(paper);
     PositionPaper(paper);
     InitPaperListeners(body, paper, rotateButton, bringForwardButton, deleteButton, duplicateButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);

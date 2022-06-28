@@ -1,10 +1,23 @@
 "use strict";
-const initDesktopControls = (body, paper, resizeElements, taskbar) => {
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, deleteButton, duplicateButton, resizeElements, taskbar) => {
     let mouseDown = false;
     let [prevX, prevY] = [0, 0];
     let holdingResize = undefined;
     let oppositeCorner = [0, 0]; //[left, top]
-    body.onmousedown = ($e) => {
+    body.onpointerdown = ($e) => {
+        [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
+        if (holdingResize == undefined) {
+            SELECTED_IMAGE_INDEX = CheckForHover(paper, TRANSFORM_OVERLAY_RESIZE_RADIUS / 2); //dont select a new image if the user is just resizing the existing one
+        }
         if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, taskbar) == true) {
             return;
         }
@@ -34,10 +47,11 @@ const initDesktopControls = (body, paper, resizeElements, taskbar) => {
             }
         }
     };
-    body.onmouseup = () => {
+    body.onpointerup = () => {
         mouseDown = false;
+        holdingResize = undefined;
     };
-    body.onmousemove = ($e) => {
+    body.onpointermove = ($e) => {
         [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
         if (mouseDown == false) {
             return;
@@ -96,10 +110,66 @@ const initDesktopControls = (body, paper, resizeElements, taskbar) => {
             UPDATE_CANVAS = true;
         }
     };
-    body.onwheel = ($e) => {
-        const damping = 1 / 400;
-        const zoomFactor = $e.deltaY * damping;
-        ZOOM += zoomFactor;
-        SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
+    if (isMobile == false) {
+        body.onwheel = ($e) => {
+            const damping = 1 / 400;
+            const zoomFactor = $e.deltaY * damping;
+            ZOOM += zoomFactor;
+            SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
+        };
+    }
+    rotateButton.onclick = () => __awaiter(void 0, void 0, void 0, function* () {
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return; //the user has just selected the item, so we dont want to immeaditely call this
+        }
+        const img = IMAGES[SELECTED_IMAGE_INDEX];
+        const rotatedBase64 = yield rotate90(img.src); //just rotating the raw data, so that we don't have to worry about the rotation later on
+        img.src = rotatedBase64;
+        [img.heightMM, img.widthMM] = [img.widthMM, img.heightMM]; //swap height and width since the image is rotated 90 degrees
+        UPDATE_CANVAS = true;
+    });
+    bringForwardButton.onclick = () => {
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return;
+        }
+        if (SELECTED_IMAGE_INDEX == IMAGES.length - 1) {
+            return; //it is already at the front
+        }
+        [IMAGES[SELECTED_IMAGE_INDEX], IMAGES[SELECTED_IMAGE_INDEX + 1]] = [IMAGES[SELECTED_IMAGE_INDEX + 1], IMAGES[SELECTED_IMAGE_INDEX]];
+        UPDATE_CANVAS = true;
     };
+    deleteButton.onclick = () => {
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return;
+        }
+        IMAGES.splice(SELECTED_IMAGE_INDEX, 1);
+        SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it has been deleted
+        UPDATE_CANVAS = true;
+    };
+    duplicateButton.onclick = () => {
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return;
+        }
+        const newImage = JSON.parse(JSON.stringify(IMAGES[SELECTED_IMAGE_INDEX]));
+        newImage.leftMM += DEFAULT_IMAGE_OFFSET_MM;
+        newImage.topMM += DEFAULT_IMAGE_OFFSET_MM;
+        IMAGES.push(newImage);
+        SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it will go to the duplicated image.
+        UPDATE_CANVAS = true;
+    };
+    document.onpaste = ($e) => {
+        const dT = $e.clipboardData;
+        const files = dT.files;
+        ParseFiles(files);
+    };
+    //Drag and drop images: https://jsfiddle.net/zever/EcxSm/
+    paper.addEventListener('dragenter', ($e) => { $e.stopPropagation(); $e.preventDefault(); }, false);
+    paper.addEventListener('dragexit', ($e) => { $e.stopPropagation(); $e.preventDefault(); }, false);
+    paper.addEventListener('dragover', ($e) => { $e.stopPropagation(); $e.preventDefault(); }, false);
+    paper.addEventListener('drop', ($e) => {
+        $e.stopPropagation();
+        $e.preventDefault();
+        var files = $e.dataTransfer.files;
+        ParseFiles(files);
+    }, false);
 };

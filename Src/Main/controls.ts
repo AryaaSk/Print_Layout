@@ -1,19 +1,24 @@
-const initMobileControls = (body: HTMLElement, paper: HTMLCanvasElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
+const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, bringForwardButton: HTMLInputElement, deleteButton: HTMLInputElement, duplicateButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
+    let mouseDown = false;
     let [prevX, prevY] = [0, 0];
 
     let holdingResize: { imageIndex: number, corner: string } | undefined = undefined;
     let oppositeCorner: number[] = [0, 0]; //[left, top]
-    
-    body.ontouchstart = ($e) => {
-        const touch = $e.changedTouches[0];
-        [MOUSE_X, MOUSE_Y] = [touch.clientX, touch.clientY];
+
+    body.onpointerdown = ($e) => {
+        [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
+        if (holdingResize == undefined) {
+            SELECTED_IMAGE_INDEX = CheckForHover(paper, TRANSFORM_OVERLAY_RESIZE_RADIUS / 2); //dont select a new image if the user is just resizing the existing one
+        }
 
         if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, taskbar) == true) {
             return;
         }
-        [prevX, prevY] = [MOUSE_X, MOUSE_Y];
 
-        if (SELECTED_IMAGE_INDEX != undefined) { //check if the user was selecting a resize counter
+        mouseDown = true;
+        [prevX, prevY] = [$e.clientX, $e.clientY];
+
+        if (SELECTED_IMAGE_INDEX != undefined) { //check if the user was selecting a resize counter, decided to implement
             const mousePosition = [MOUSE_X, MOUSE_Y];
             const radiusPX = TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI;
             const [topLeftBoundingBox, topRightBoundingBox, bottomLeftBoundingBox, bottomRightBoundingBox] = [resizeElements.topLeftResizeElement.getBoundingClientRect(), resizeElements.topRightResizeElement.getBoundingClientRect(), resizeElements.bottomLeftResizeElement.getBoundingClientRect(), resizeElements.bottomRightResizeElement.getBoundingClientRect()];
@@ -39,13 +44,17 @@ const initMobileControls = (body: HTMLElement, paper: HTMLCanvasElement, resizeE
         }
     }
 
-    body.ontouchend = () => {
+    body.onpointerup = () => {
+        mouseDown = false;
         holdingResize = undefined;
     }
 
-    body.ontouchmove = ($e) => {
-        const touch = $e.changedTouches[0];
-        [MOUSE_X, MOUSE_Y] = [touch.clientX, touch.clientY];
+    body.onpointermove = ($e) => {
+        [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
+
+        if (mouseDown == false) {
+            return;
+        }
 
         if (holdingResize == undefined) {
             const [deltaX, deltaY] = [MOUSE_X - prevX, MOUSE_Y - prevY];
@@ -108,6 +117,81 @@ const initMobileControls = (body: HTMLElement, paper: HTMLCanvasElement, resizeE
         }
     }
 
+    if (isMobile == false) {
+        body.onwheel = ($e) => {
+            const damping = 1 / 400;
+            const zoomFactor = $e.deltaY * damping;
+            ZOOM += zoomFactor;
+            SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
+        }
+    }
+    
 
-    //no zoom on mobile devices
+
+    rotateButton.onclick = async () => {
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return; //the user has just selected the item, so we dont want to immeaditely call this
+        }
+
+        const img = IMAGES[SELECTED_IMAGE_INDEX!];
+        const rotatedBase64 = await rotate90(img.src); //just rotating the raw data, so that we don't have to worry about the rotation later on
+        img.src = <string>rotatedBase64;
+        [img.heightMM, img.widthMM] = [img.widthMM, img.heightMM]; //swap height and width since the image is rotated 90 degrees
+        UPDATE_CANVAS = true;
+    }
+
+    bringForwardButton.onclick = () => { //just shift the currently selected image to the left in the IMAGES array
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return;
+        }
+
+        if (SELECTED_IMAGE_INDEX == IMAGES.length - 1) {
+            return; //it is already at the front
+        }
+        [IMAGES[SELECTED_IMAGE_INDEX!], IMAGES[SELECTED_IMAGE_INDEX! + 1]] = [IMAGES[SELECTED_IMAGE_INDEX! + 1], IMAGES[SELECTED_IMAGE_INDEX!]];
+        UPDATE_CANVAS = true;
+    }
+
+    deleteButton.onclick = () => {
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return;
+        }
+
+        IMAGES.splice(SELECTED_IMAGE_INDEX!, 1);
+        SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it has been deleted
+        UPDATE_CANVAS = true;
+    }
+
+    duplicateButton.onclick = () => { //not working perfectly, new image goes behind for some reason
+        if (IMAGE_BUTTONS_DISABLED == true) {
+            return;
+        }
+
+        const newImage = JSON.parse(JSON.stringify(IMAGES[SELECTED_IMAGE_INDEX!]));
+        newImage.leftMM += DEFAULT_IMAGE_OFFSET_MM;
+        newImage.topMM += DEFAULT_IMAGE_OFFSET_MM;
+
+        IMAGES.push(newImage);
+        SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it will go to the duplicated image.
+        UPDATE_CANVAS = true;
+    }
+
+    document.onpaste = ($e) => { //paste image: https://stackoverflow.com/questions/60503912/get-image-using-paste-from-the-browser
+        const dT = $e.clipboardData!;
+        const files = dT.files!;
+        ParseFiles(files);
+    }
+
+    //Drag and drop images: https://jsfiddle.net/zever/EcxSm/
+    paper.addEventListener('dragenter', ($e: any) => { $e.stopPropagation(); $e.preventDefault() }, false);
+    paper.addEventListener('dragexit', ($e: any) => { $e.stopPropagation(); $e.preventDefault() }, false);
+    paper.addEventListener('dragover', ($e: any) => { $e.stopPropagation(); $e.preventDefault() }, false);
+    paper.addEventListener('drop', ($e) => {
+
+        $e.stopPropagation();
+        $e.preventDefault(); 
+        var files = $e.dataTransfer!.files;
+        ParseFiles(files);
+
+    }, false)
 }

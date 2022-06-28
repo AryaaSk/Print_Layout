@@ -134,82 +134,6 @@ const distanceBetween = (p1: number[], p2: number[]) => {
 
 
 
-const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, bringForwardButton: HTMLInputElement, deleteButton: HTMLInputElement, duplicateButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
-    if (isMobile == false) {
-        initDesktopControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomRightResizeElement }, taskbar);
-    }
-    else {
-        initMobileControls(body, paper, { topLeftResizeElement: resizeElements.topLeftResizeElement, topRightResizeElement: resizeElements.topRightResizeElement, bottomLeftResizeElement: resizeElements.bottomLeftResizeElement, bottomRightResizeElement: resizeElements.bottomRightResizeElement }, taskbar);
-    }
-
-    rotateButton.onclick = async () => {
-        if (IMAGE_BUTTONS_DISABLED == true) {
-            return; //the user has just selected the item, so we dont want to immeaditely call this
-        }
-
-        const img = IMAGES[SELECTED_IMAGE_INDEX!];
-        const rotatedBase64 = await rotate90(img.src); //just rotating the raw data, so that we don't have to worry about the rotation later on
-        img.src = <string>rotatedBase64;
-        [img.heightMM, img.widthMM] = [img.widthMM, img.heightMM]; //swap height and width since the image is rotated 90 degrees
-        UPDATE_CANVAS = true;
-    }
-
-    bringForwardButton.onclick = () => { //just shift the currently selected image to the left in the IMAGES array
-        if (IMAGE_BUTTONS_DISABLED == true) {
-            return;
-        }
-
-        if (SELECTED_IMAGE_INDEX == IMAGES.length - 1) {
-            return; //it is already at the front
-        }
-        [IMAGES[SELECTED_IMAGE_INDEX!], IMAGES[SELECTED_IMAGE_INDEX! + 1]] = [IMAGES[SELECTED_IMAGE_INDEX! + 1], IMAGES[SELECTED_IMAGE_INDEX!]];
-        UPDATE_CANVAS = true;
-    }
-
-    deleteButton.onclick = () => {
-        if (IMAGE_BUTTONS_DISABLED == true) {
-            return;
-        }
-
-        IMAGES.splice(SELECTED_IMAGE_INDEX!, 1);
-        SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it has been deleted
-        UPDATE_CANVAS = true;
-    }
-
-    duplicateButton.onclick = () => { //not working perfectly, new image goes behind for some reason
-        if (IMAGE_BUTTONS_DISABLED == true) {
-            return;
-        }
-
-        const newImage = JSON.parse(JSON.stringify(IMAGES[SELECTED_IMAGE_INDEX!]));
-        newImage.leftMM += DEFAULT_IMAGE_OFFSET_MM;
-        newImage.topMM += DEFAULT_IMAGE_OFFSET_MM;
-
-        IMAGES.push(newImage);
-        SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it will go to the duplicated image.
-        UPDATE_CANVAS = true;
-    }
-
-    document.onpaste = ($e) => { //paste image: https://stackoverflow.com/questions/60503912/get-image-using-paste-from-the-browser
-        const dT = $e.clipboardData!;
-        const files = dT.files!;
-        ParseFiles(files);
-    }
-
-    //Drag and drop images: https://jsfiddle.net/zever/EcxSm/
-    paper.addEventListener('dragenter', ($e: any) => { $e.stopPropagation(); $e.preventDefault() }, false);
-    paper.addEventListener('dragexit', ($e: any) => { $e.stopPropagation(); $e.preventDefault() }, false);
-    paper.addEventListener('dragover', ($e: any) => { $e.stopPropagation(); $e.preventDefault() }, false);
-    paper.addEventListener('drop', ($e) => {
-
-        $e.stopPropagation();
-        $e.preventDefault(); 
-        var files = $e.dataTransfer!.files;
-        ParseFiles(files);
-
-    }, false)
-}
-
 const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, print: HTMLInputElement, paper: HTMLCanvasElement) => {
     const fileInput = <HTMLInputElement>document.getElementById("hiddenFile")!;
     file.onclick = () => {
@@ -276,6 +200,7 @@ const DrawImages = (canvas: CanvasRenderingContext2D) => { //Need to work on spe
     }
 }
 
+//SELECT 'FIT TO PAPER' OPTION, AND MAKE SURE PAPER SIZE IS A4
 const PrintCanvas = (body: HTMLElement, paper: HTMLCanvasElement) => {
     let width = paper.width; 
     let height = paper.height;
@@ -340,17 +265,6 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
         }
         LOOP_COUNT += 1;
 
-        const newSelectedIndex = CheckForHover(paper, TRANSFORM_OVERLAY_RESIZE_RADIUS / 2); //added the margin so that the user can still select the resize counter even when not hovering over the actual image
-        if (newSelectedIndex != undefined && SELECTED_IMAGE_INDEX == undefined) { //dont want to change the selected index to another index if the user is already selected one
-            SELECTED_IMAGE_INDEX = newSelectedIndex;
-        }
-        else if (newSelectedIndex == undefined && SELECTED_IMAGE_INDEX != undefined) {
-            SELECTED_IMAGE_INDEX = newSelectedIndex;
-        }
-        else if (newSelectedIndex != undefined && CheckIntersectionImage(MOUSE_X, MOUSE_Y, paper.getBoundingClientRect(), SELECTED_IMAGE_INDEX!) == false) { //only change if the selected index is not being hovered over anymore
-            SELECTED_IMAGE_INDEX = newSelectedIndex;
-        }
-
         if (SELECTED_IMAGE_INDEX != undefined) { //display transform overlay over the image
             const img = IMAGES[SELECTED_IMAGE_INDEX];
             const paperBoundingBox = paper.getBoundingClientRect();
@@ -384,11 +298,18 @@ const Main = () => {
     const [canvas, transformOverlay, imageSize, rotateButton, bringForwardButton, deleteButton, duplicateButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, document.getElementById("imageSize")!, <HTMLInputElement>document.getElementById("rotateButton")!, <HTMLInputElement>document.getElementById("bringForward")!, <HTMLInputElement>document.getElementById("delete")!, <HTMLInputElement>document.getElementById("duplicate")!];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize")!, document.getElementById("topRightResize")!, document.getElementById("bottomLeftResize")!, document.getElementById("bottomRightResize")!];
 
-    //IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
+    IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
 
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
     InitHTML(taskbar);
+
     FitToScreen();
+    window.onresize = () => {
+        FitToScreen();
+        SizePaper(paper);
+        PositionPaper(paper)
+        UPDATE_CANVAS = true
+    }
 
     SizePaper(paper);
     PositionPaper(paper);
