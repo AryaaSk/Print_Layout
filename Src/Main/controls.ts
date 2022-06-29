@@ -119,6 +119,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             const damping = 1 / 400;
             const zoomFactor = $e.deltaY * damping;
             ZOOM += zoomFactor;
+            limitZoom();
             SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
         }
     }
@@ -133,6 +134,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             const deltaScale = $e.scale - previousScale;
             previousScale = $e.scale;
             ZOOM *= 1 + deltaScale;
+            limitZoom();
             SizePaper(paper);
         });
 
@@ -140,6 +142,14 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             pinching = false;
             previousScale = 1;
         });
+    }
+    const limitZoom = () => {
+        if (ZOOM < ORIGINAL_ZOOM * 0.1) {
+            ZOOM = ORIGINAL_ZOOM * 0.1;
+        }
+        else if (ZOOM > ORIGINAL_ZOOM * 5) {
+            ZOOM = ORIGINAL_ZOOM * 5;
+        }
     }
 
 

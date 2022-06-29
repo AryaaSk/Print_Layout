@@ -9,6 +9,7 @@ const DEFAULT_PAPER_MARGIN_PX = 50;
 const DPI = window.devicePixelRatio; //used in controls to map mouse position to scene position
 const MM_PX_SF = 3;
 let ZOOM = 1;
+let ORIGINAL_ZOOM = 1;
 //If I change the PaperSize, ZOOM or MM_PX_SF, I have to make sure that the total canvas area does not exceed (16777216)px^2, otherwise the iOS app will crash
 
 const IMAGES: { src: string, leftMM: number, topMM: number, heightMM: number, widthMM: number }[] = []; //rotation in degrees
@@ -39,6 +40,7 @@ const FitToScreen = () => {
     const heightSF = (window.innerHeight - DEFAULT_PAPER_MARGIN_PX) / paperHeightPX;
     const widthSF = (window.innerWidth - DEFAULT_PAPER_MARGIN_PX) / paperWidthPX;
     ZOOM = (heightSF < widthSF) ? heightSF : widthSF;
+    ORIGINAL_ZOOM = ZOOM;
     UPDATE_CANVAS = true;
 }
 

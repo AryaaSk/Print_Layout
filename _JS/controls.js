@@ -112,6 +112,7 @@ const InitPaperListeners = (body, paper, rotateButton, deleteButton, duplicateBu
             const damping = 1 / 400;
             const zoomFactor = $e.deltaY * damping;
             ZOOM += zoomFactor;
+            limitZoom();
             SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
         };
     }
@@ -124,6 +125,7 @@ const InitPaperListeners = (body, paper, rotateButton, deleteButton, duplicateBu
             const deltaScale = $e.scale - previousScale;
             previousScale = $e.scale;
             ZOOM *= 1 + deltaScale;
+            limitZoom();
             SizePaper(paper);
         });
         body.addEventListener('gestureend', () => {
@@ -131,6 +133,14 @@ const InitPaperListeners = (body, paper, rotateButton, deleteButton, duplicateBu
             previousScale = 1;
         });
     }
+    const limitZoom = () => {
+        if (ZOOM < ORIGINAL_ZOOM * 0.1) {
+            ZOOM = ORIGINAL_ZOOM * 0.1;
+        }
+        else if (ZOOM > ORIGINAL_ZOOM * 5) {
+            ZOOM = ORIGINAL_ZOOM * 5;
+        }
+    };
     rotateButton.onclick = () => __awaiter(void 0, void 0, void 0, function* () {
         if (IMAGE_BUTTONS_DISABLED == true) {
             return; //the user has just selected the item, so we dont want to immeaditely call this
