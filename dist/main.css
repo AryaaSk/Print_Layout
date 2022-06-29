@@ -51,7 +51,7 @@ body {
     padding: 0;
 
     background-color: transparent;
-    border: 5px solid #c4c4c4;
+    border: 3px solid #c4c4c4;
     visibility: hidden;
     
     display: flex;
@@ -92,17 +92,15 @@ body {
     opacity: 95%;
     border: none;
     border-radius: calc(var(--imageButtonSize) / 10);
-
-    font-size: xx-large;
-    font-weight: bold;
-    color: black;
-
     -webkit-tap-highlight-color: transparent;
+
+    display: grid;
+    place-items: center;
 }
-#delete {
-    font-size: x-large;
-    font-weight: normal;
-    color: red;
+.imageButton > img {
+    height: 55%;
+    width: 55%;
+    object-fit: contain;
 }
 
 .resizeCounter {

@@ -307,7 +307,7 @@ const Main = () => {
     window.onresize = () => {
         FitToScreen();
         SizePaper(paper);
-        PositionPaper(paper)
+        PositionPaper(paper);
         UPDATE_CANVAS = true
     }
 
