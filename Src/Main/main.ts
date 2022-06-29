@@ -276,8 +276,11 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
                 PositionPaper(bufferPaper);
                 await DrawImages(bufferCanvas); //draw data to buffer canvas first
 
+                /* //Slower method
                 const bufferCanvasData = bufferCanvas.getImageData(0, 0, bufferPaper.width - 1, bufferPaper.height - 1);
-                canvas.putImageData(bufferCanvasData, 0, 0); //copy buffer canvas contents onto actual paper
+                canvas.putImageData(bufferCanvasData, 0, 0);
+                */
+                canvas.drawImage(bufferPaper, 0, 0); //copy buffer canvas contents onto actual paper
 
                 UPDATE_CANVAS = false;
             }

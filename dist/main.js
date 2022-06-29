@@ -237,8 +237,11 @@ const CanvasLoop = (paper, canvas, transformOverlay, imageSize) => {
                 SizePaper(bufferPaper);
                 PositionPaper(bufferPaper);
                 yield DrawImages(bufferCanvas); //draw data to buffer canvas first
+                /* //Slower method
                 const bufferCanvasData = bufferCanvas.getImageData(0, 0, bufferPaper.width - 1, bufferPaper.height - 1);
-                canvas.putImageData(bufferCanvasData, 0, 0); //copy buffer canvas contents onto actual paper
+                canvas.putImageData(bufferCanvasData, 0, 0);
+                */
+                canvas.drawImage(bufferPaper, 0, 0); //copy buffer canvas contents onto actual paper
                 UPDATE_CANVAS = false;
             }
             LOOP_COUNT = 0;
