@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 const PAPER_POSITION = { left: 0, top: 0 }; //position relative, left=x, top=y
 let PAPER_HEIGHT_MM = 297;
 let PAPER_WIDTH_MM = 210;
@@ -17,7 +26,7 @@ let SELECTED_IMAGE_INDEX = undefined;
 let IMAGE_BUTTONS_DISABLED = true;
 let UPDATE_CANVAS = false;
 let LOOP_COUNT = 0;
-const UPDATE_CANVAS_TICK = (isMobile == false) ? 3 : 4; //update canvas slower on mobile since it is less powerful
+const UPDATE_CANVAS_TICK = 1; //update canvas every (tick), can leave at 1 now since I have implemented buffer canvas to avoid flickering
 const InitHTML = (taskbar) => {
     const urlParams = new URLSearchParams(window.location.search);
     const hideTaskbar = urlParams.get('hideTaskbar');
@@ -34,6 +43,7 @@ const FitToScreen = () => {
     ORIGINAL_ZOOM = ZOOM;
     UPDATE_CANVAS = true;
 };
+//IOS FUNCTIONS - DO NOT USE IN ACTUAL CODE
 function GetCanvasBase64Encoded() {
     const paper = document.getElementById("paper");
     const base64EncodedString = paper.toDataURL();
@@ -127,46 +137,6 @@ const InitTaskbarListeners = (body, file, print, paper) => {
         PrintCanvas(body, paper);
     };
 };
-const NewImageObject = (src, heightPX, widthPX, leftMM, topMM) => {
-    const [left, top] = [(leftMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : leftMM, (topMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : topMM];
-    const [heightMM, widthMM] = [heightPX / MM_PX_SF, widthPX / MM_PX_SF];
-    const heightScaleFactor = DEFAULT_IMAGE_SIZE_MM / heightMM;
-    const widthScaleFactor = DEFAULT_IMAGE_SIZE_MM / widthMM;
-    let scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-    if (scaleFactor > 1) { //don't want to enlarge images if they are already smaller than DEFAULT_IMAGE_SIZE_MM
-        scaleFactor = 1;
-    }
-    return { src: src, leftMM: left, topMM: top, heightMM: heightMM * scaleFactor, widthMM: widthMM * scaleFactor };
-};
-const ParseFiles = (files) => {
-    for (const file of files) {
-        const fReader = new FileReader();
-        fReader.readAsDataURL(file);
-        fReader.onloadend = ($e) => {
-            const src = $e.target.result;
-            const image = new Image();
-            image.src = src;
-            image.onload = () => {
-                IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
-                UPDATE_CANVAS = true;
-            };
-        };
-    }
-};
-const DrawImages = (canvas) => {
-    const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
-    canvas.fillStyle = "white";
-    canvas.fillRect(0, 0, canvasWidth, canvasHeight); //to make the background white
-    for (const imageObject of IMAGES) {
-        const img = new Image();
-        img.src = imageObject.src;
-        img.onload = () => {
-            let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF * ZOOM, imageObject.topMM * MM_PX_SF * ZOOM];
-            let [imageHeightPX, imageWidthPX] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
-            canvas.drawImage(img, imageX, imageY, imageWidthPX, imageHeightPX);
-        };
-    }
-};
 //SELECT 'FIT TO PAPER' OPTION, AND MAKE SURE PAPER SIZE IS A4
 const PrintCanvas = (body, paper) => {
     let width = paper.width;
@@ -207,15 +177,68 @@ const PrintCanvas = (body, paper) => {
         body.style.setProperty("pointer-events", "all");
     }, 3000);
 };
+const NewImageObject = (src, heightPX, widthPX, leftMM, topMM) => {
+    const [left, top] = [(leftMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : leftMM, (topMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : topMM];
+    const [heightMM, widthMM] = [heightPX / MM_PX_SF, widthPX / MM_PX_SF];
+    const heightScaleFactor = DEFAULT_IMAGE_SIZE_MM / heightMM;
+    const widthScaleFactor = DEFAULT_IMAGE_SIZE_MM / widthMM;
+    let scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
+    if (scaleFactor > 1) { //don't want to enlarge images if they are already smaller than DEFAULT_IMAGE_SIZE_MM
+        scaleFactor = 1;
+    }
+    return { src: src, leftMM: left, topMM: top, heightMM: heightMM * scaleFactor, widthMM: widthMM * scaleFactor };
+};
+const ParseFiles = (files) => {
+    for (const file of files) {
+        const fReader = new FileReader();
+        fReader.readAsDataURL(file);
+        fReader.onloadend = ($e) => {
+            const src = $e.target.result;
+            const image = new Image();
+            image.src = src;
+            image.onload = () => {
+                IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
+                UPDATE_CANVAS = true;
+            };
+        };
+    }
+};
+const DrawImages = (canvas) => {
+    const promise = new Promise((resolve) => {
+        const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
+        canvas.fillStyle = "white";
+        canvas.fillRect(0, 0, canvasWidth, canvasHeight); //to make the background white
+        let counter = 0;
+        for (const imageObject of IMAGES) {
+            const img = new Image();
+            img.src = imageObject.src;
+            img.onload = () => {
+                counter += 1;
+                let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF * ZOOM, imageObject.topMM * MM_PX_SF * ZOOM];
+                let [imageHeightPX, imageWidthPX] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
+                canvas.drawImage(img, imageX, imageY, imageWidthPX, imageHeightPX);
+                if (counter == IMAGES.length) { //dont -1 because we incremented counter before this
+                    resolve("Completed drawing images");
+                }
+            };
+        }
+    });
+    return promise;
+};
 const CanvasLoop = (paper, canvas, transformOverlay, imageSize) => {
-    setInterval(() => {
+    const bufferPaper = document.createElement("canvas");
+    const bufferCanvas = bufferPaper.getContext('2d'); //draw to this canvas, and once we have finished drawing we can draw to the main canvas, to avoid flickering
+    setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
         if (LOOP_COUNT == UPDATE_CANVAS_TICK) { //only redraw images every (UPDATE_CANVAS_TICK) ticks, but update other things at regular 60fps to keep UI smooth
             //1 = every tick
             //2 = every 2nd tick
-            //3 = every 3rd tick
             //etc...
             if (UPDATE_CANVAS == true) {
-                DrawImages(canvas);
+                SizePaper(bufferPaper);
+                PositionPaper(bufferPaper);
+                yield DrawImages(bufferCanvas); //draw data to buffer canvas first
+                const bufferCanvasData = bufferCanvas.getImageData(0, 0, bufferPaper.width - 1, bufferPaper.height - 1);
+                canvas.putImageData(bufferCanvasData, 0, 0); //copy buffer canvas contents onto actual paper
                 UPDATE_CANVAS = false;
             }
             LOOP_COUNT = 0;
@@ -240,7 +263,7 @@ const CanvasLoop = (paper, canvas, transformOverlay, imageSize) => {
             transformOverlay.style.visibility = "hidden";
             IMAGE_BUTTONS_DISABLED = true;
         }
-    }, 16);
+    }), 16);
 };
 const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper"), document.getElementById("taskbar")];

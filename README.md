@@ -68,3 +68,4 @@ I also integrated the webpage into a native iOS app, by displaying a Webview, an
 Since this app requires a lot of image rendering, performance is a large consideration. Here are the techniques I used to try and mitigate the performance issues:
 - Only redraw images on a change, instead of every frame
 - Redraw canvas at a different rate than the rest of the UI, every 3 ticks on desktop and every 4 ticks on mobile *(due to less power on mobile)*.
+- Used a **buffer canvas** to draw all images to, once that has finished then I simply copy the contents over to the actual canvas.

@@ -23,7 +23,7 @@ let IMAGE_BUTTONS_DISABLED = true;
 
 let UPDATE_CANVAS = false;
 let LOOP_COUNT = 0;
-const UPDATE_CANVAS_TICK = (isMobile == false) ? 3 : 4; //update canvas slower on mobile since it is less powerful
+const UPDATE_CANVAS_TICK = 1; //update canvas every (tick), can leave at 1 now since I have implemented buffer canvas to avoid flickering
 
 
 const InitHTML = (taskbar: HTMLElement) => {
@@ -44,6 +44,7 @@ const FitToScreen = () => {
     UPDATE_CANVAS = true;
 }
 
+//IOS FUNCTIONS - DO NOT USE IN ACTUAL CODE
 function GetCanvasBase64Encoded() { //for iOS, which is why it is using the global variables instead of taking them in as HTMLElements
     const paper = <HTMLCanvasElement>document.getElementById("paper")!;
 
@@ -151,57 +152,6 @@ const InitTaskbarListeners = (body: HTMLElement, file: HTMLInputElement, print: 
     }
 }
 
-
-
-const NewImageObject = (src: string, heightPX: number, widthPX: number, leftMM?: number, topMM?: number) => { //height and width refer to original dimensions of image
-    const [left, top] = [(leftMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : leftMM, (topMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : topMM]
-    const [heightMM, widthMM] = [heightPX / MM_PX_SF, widthPX / MM_PX_SF];
-
-    const heightScaleFactor = DEFAULT_IMAGE_SIZE_MM / heightMM;
-    const widthScaleFactor = DEFAULT_IMAGE_SIZE_MM / widthMM;
-    let scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
-    if (scaleFactor > 1) { //don't want to enlarge images if they are already smaller than DEFAULT_IMAGE_SIZE_MM
-        scaleFactor = 1;
-    }
-
-    return { src: src, leftMM: left, topMM: top, heightMM: heightMM * scaleFactor, widthMM: widthMM * scaleFactor};
-}
-const ParseFiles = (files: FileList) => {
-    for (const file of files) {
-        const fReader = new FileReader();
-        fReader.readAsDataURL(file);
-        fReader.onloadend = ($e) => {
-            const src = <string>$e.target!.result;
-
-            const image = new Image();
-            image.src = src;
-            image.onload = () => {
-                IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
-                UPDATE_CANVAS = true;
-            }
-        }
-    }
-}
-
-const DrawImages = (canvas: CanvasRenderingContext2D) => { //Need to work on speed, since currently it is very slow
-    const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
-    
-    canvas.fillStyle = "white";
-    canvas.fillRect(0, 0, canvasWidth, canvasHeight); //to make the background white
-
-    for (const imageObject of IMAGES) {
-        const img = new Image();
-        img.src = imageObject.src;
-        
-        img.onload = () => {
-            let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF * ZOOM, imageObject.topMM * MM_PX_SF * ZOOM];
-            let [imageHeightPX, imageWidthPX] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
-
-            canvas.drawImage(img, imageX, imageY, imageWidthPX, imageHeightPX);
-        }
-    }
-}
-
 //SELECT 'FIT TO PAPER' OPTION, AND MAKE SURE PAPER SIZE IS A4
 const PrintCanvas = (body: HTMLElement, paper: HTMLCanvasElement) => {
     let width = paper.width; 
@@ -251,18 +201,87 @@ const PrintCanvas = (body: HTMLElement, paper: HTMLCanvasElement) => {
 
 
 
+const NewImageObject = (src: string, heightPX: number, widthPX: number, leftMM?: number, topMM?: number) => { //height and width refer to original dimensions of image
+    const [left, top] = [(leftMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : leftMM, (topMM == undefined) ? DEFAULT_IMAGE_OFFSET_MM : topMM]
+    const [heightMM, widthMM] = [heightPX / MM_PX_SF, widthPX / MM_PX_SF];
+
+    const heightScaleFactor = DEFAULT_IMAGE_SIZE_MM / heightMM;
+    const widthScaleFactor = DEFAULT_IMAGE_SIZE_MM / widthMM;
+    let scaleFactor = (heightScaleFactor < widthScaleFactor) ? heightScaleFactor : widthScaleFactor;
+    if (scaleFactor > 1) { //don't want to enlarge images if they are already smaller than DEFAULT_IMAGE_SIZE_MM
+        scaleFactor = 1;
+    }
+
+    return { src: src, leftMM: left, topMM: top, heightMM: heightMM * scaleFactor, widthMM: widthMM * scaleFactor};
+}
+const ParseFiles = (files: FileList) => {
+    for (const file of files) {
+        const fReader = new FileReader();
+        fReader.readAsDataURL(file);
+        fReader.onloadend = ($e) => {
+            const src = <string>$e.target!.result;
+
+            const image = new Image();
+            image.src = src;
+            image.onload = () => {
+                IMAGES.push(NewImageObject(src, image.naturalHeight, image.naturalWidth));
+                UPDATE_CANVAS = true;
+            }
+        }
+    }
+}
+
+const DrawImages = (canvas: CanvasRenderingContext2D) => { //Need to work on speed, since currently it is very slow
+    const promise = new Promise((resolve) => {
+        const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
+    
+        canvas.fillStyle = "white";
+        canvas.fillRect(0, 0, canvasWidth, canvasHeight); //to make the background white
+
+        let counter = 0;
+        for (const imageObject of IMAGES) {
+            const img = new Image();
+            img.src = imageObject.src;
+            
+            img.onload = () => {
+                counter += 1;
+
+                let [imageX, imageY] = [imageObject.leftMM * MM_PX_SF * ZOOM, imageObject.topMM * MM_PX_SF * ZOOM];
+                let [imageHeightPX, imageWidthPX] = [imageObject.heightMM * MM_PX_SF * ZOOM, imageObject.widthMM * MM_PX_SF * ZOOM];
+                canvas.drawImage(img, imageX, imageY, imageWidthPX, imageHeightPX);
+
+                if (counter == IMAGES.length) { //dont -1 because we incremented counter before this
+                    resolve("Completed drawing images");
+                }
+            }
+        }
+    })
+    return promise;
+}
+
+
+
 const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, transformOverlay: HTMLElement, imageSize: HTMLElement) => { //This seems to work better than individually updating the canvas everytime there's a change, but there is still a bit of flickering
-    setInterval(() => {
+    const bufferPaper = document.createElement("canvas");
+    const bufferCanvas = bufferPaper.getContext('2d')!; //draw to this canvas, and once we have finished drawing we can draw to the main canvas, to avoid flickering
+
+    setInterval(async () => {
         if (LOOP_COUNT == UPDATE_CANVAS_TICK) { //only redraw images every (UPDATE_CANVAS_TICK) ticks, but update other things at regular 60fps to keep UI smooth
             //1 = every tick
             //2 = every 2nd tick
-            //3 = every 3rd tick
             //etc...
 
             if (UPDATE_CANVAS == true) {
-                DrawImages(canvas);
+                SizePaper(bufferPaper);
+                PositionPaper(bufferPaper);
+                await DrawImages(bufferCanvas); //draw data to buffer canvas first
+
+                const bufferCanvasData = bufferCanvas.getImageData(0, 0, bufferPaper.width - 1, bufferPaper.height - 1);
+                canvas.putImageData(bufferCanvasData, 0, 0); //copy buffer canvas contents onto actual paper
+
                 UPDATE_CANVAS = false;
             }
+
             LOOP_COUNT = 0;
         }
         LOOP_COUNT += 1;
@@ -310,7 +329,7 @@ const Main = () => {
         FitToScreen();
         SizePaper(paper);
         PositionPaper(paper);
-        UPDATE_CANVAS = true
+        UPDATE_CANVAS = true;
     }
 
     SizePaper(paper);
