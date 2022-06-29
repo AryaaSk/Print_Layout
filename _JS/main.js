@@ -245,7 +245,7 @@ const Main = () => {
     const [file, print] = [document.getElementById("addImage"), document.getElementById("printButton")];
     const [canvas, transformOverlay, imageSize, rotateButton, bringForwardButton, deleteButton, duplicateButton] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("imageSize"), document.getElementById("rotateButton"), document.getElementById("bringForward"), document.getElementById("delete"), document.getElementById("duplicate")];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize"), document.getElementById("topRightResize"), document.getElementById("bottomLeftResize"), document.getElementById("bottomRightResize")];
-    //IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
+    IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
     InitHTML(taskbar);
     FitToScreen();

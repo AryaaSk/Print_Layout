@@ -53,7 +53,7 @@ body {
     background-color: transparent;
     border: 3px solid #c4c4c4;
     visibility: hidden;
-    
+
     display: flex;
     align-items: center;
     justify-content: center;
@@ -73,8 +73,11 @@ body {
 }
 
 #overlayButtons {
-    height: 100%;
-    width: 100%;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(calc(var(--imageButtonSize) * -1) - 10px);
+    width: var(--imageButtonSize);
 
     display: grid;
     grid-template-columns: repeat(auto-fit, var(--imageButtonSize));

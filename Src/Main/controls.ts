@@ -2,8 +2,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
     let mouseDown = false;
     let [prevX, prevY] = [0, 0];
 
-    let holdingResize: { imageIndex: number, corner: string } | undefined = undefined;
-    let oppositeCorner: number[] = [0, 0]; //[left, top]
+    let holdingResize: { imageIndex: number, corner: string, oppositeCorner: number[] /*[left, top]*/ } | undefined = undefined;
 
     body.onpointerdown = ($e) => {
         [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
@@ -18,28 +17,23 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         mouseDown = true;
         [prevX, prevY] = [$e.clientX, $e.clientY];
 
-        if (SELECTED_IMAGE_INDEX != undefined) { //check if the user was selecting a resize counter, decided to implement
-            const mousePosition = [MOUSE_X, MOUSE_Y];
+        if (SELECTED_IMAGE_INDEX != undefined) { //check if the user was selecting a resize counter
             const radiusPX = TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI;
             const [topLeftBoundingBox, topRightBoundingBox, bottomLeftBoundingBox, bottomRightBoundingBox] = [resizeElements.topLeftResizeElement.getBoundingClientRect(), resizeElements.topRightResizeElement.getBoundingClientRect(), resizeElements.bottomLeftResizeElement.getBoundingClientRect(), resizeElements.bottomRightResizeElement.getBoundingClientRect()];
             const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [[topLeftBoundingBox.left + radiusPX, topLeftBoundingBox.top + radiusPX], [topRightBoundingBox.left + radiusPX, topRightBoundingBox.top + radiusPX], [bottomLeftBoundingBox.left + radiusPX, bottomLeftBoundingBox.top + radiusPX], [bottomRightBoundingBox.left + radiusPX, bottomRightBoundingBox.top + radiusPX]];
 
             holdingResize = undefined;
-            if (distanceBetween(topLeftResize, mousePosition) <= radiusPX + 5) { //calculate new distance between mouse position and bottom left, and resize based on that
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topLeft" };
-                oppositeCorner = [bottomRightResize[0] + radiusPX, bottomRightResize[1] + radiusPX];
+            if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, resizeElements.topLeftResizeElement) == true) {
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topLeft", oppositeCorner: [bottomRightResize[0] + radiusPX, bottomRightResize[1] + radiusPX] }; //calculate new distance between mouse position and bottom left, and resize based on that
             }
-            else if (distanceBetween(topRightResize, mousePosition) <= radiusPX + 5) {
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topRight" };
-                oppositeCorner = [bottomLeftResize[0] - radiusPX, bottomLeftResize[1] + radiusPX];
+            else if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, resizeElements.topRightResizeElement) == true) {
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topRight", oppositeCorner: [bottomLeftResize[0] - radiusPX, bottomLeftResize[1] + radiusPX] };
             }
-            else if (distanceBetween(bottomLeftResize, mousePosition) <= radiusPX + 5) {
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomLeft" };
-                oppositeCorner = [topRightResize[0] + radiusPX, topRightResize[1] - radiusPX];
+            else if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, resizeElements.bottomLeftResizeElement) == true) {
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomLeft", oppositeCorner: [topRightResize[0] + radiusPX, topRightResize[1] - radiusPX] };
             }
-            else if (distanceBetween(bottomRightResize, mousePosition) <= radiusPX + 5) {
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomRight" };
-                oppositeCorner = [topLeftResize[0] - radiusPX, topLeftResize[1] - radiusPX];
+            else if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, resizeElements.bottomRightResizeElement) == true) {
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomRight", oppositeCorner: [topLeftResize[0] - radiusPX, topLeftResize[1] - radiusPX] };
             }
         }
     }
@@ -75,6 +69,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
 
         else { //there could be no selectedImage but still a holdingResize, because the user is not hovering over the image anymore
             const img = IMAGES[holdingResize.imageIndex];
+            const oppositeCorner = holdingResize.oppositeCorner;
 
             let [newWidthPX, newHeightPX] = [0, 0];
             if (holdingResize.corner == "topLeft") {
@@ -125,7 +120,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
         }
     }
-    
+
 
 
     rotateButton.onclick = async () => {

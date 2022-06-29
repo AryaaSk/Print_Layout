@@ -12,7 +12,6 @@ const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, delet
     let mouseDown = false;
     let [prevX, prevY] = [0, 0];
     let holdingResize = undefined;
-    let oppositeCorner = [0, 0]; //[left, top]
     body.onpointerdown = ($e) => {
         [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
         if (holdingResize == undefined) {
@@ -23,27 +22,22 @@ const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, delet
         }
         mouseDown = true;
         [prevX, prevY] = [$e.clientX, $e.clientY];
-        if (SELECTED_IMAGE_INDEX != undefined) { //check if the user was selecting a resize counter, decided to implement
-            const mousePosition = [MOUSE_X, MOUSE_Y];
+        if (SELECTED_IMAGE_INDEX != undefined) { //check if the user was selecting a resize counter
             const radiusPX = TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI;
             const [topLeftBoundingBox, topRightBoundingBox, bottomLeftBoundingBox, bottomRightBoundingBox] = [resizeElements.topLeftResizeElement.getBoundingClientRect(), resizeElements.topRightResizeElement.getBoundingClientRect(), resizeElements.bottomLeftResizeElement.getBoundingClientRect(), resizeElements.bottomRightResizeElement.getBoundingClientRect()];
             const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [[topLeftBoundingBox.left + radiusPX, topLeftBoundingBox.top + radiusPX], [topRightBoundingBox.left + radiusPX, topRightBoundingBox.top + radiusPX], [bottomLeftBoundingBox.left + radiusPX, bottomLeftBoundingBox.top + radiusPX], [bottomRightBoundingBox.left + radiusPX, bottomRightBoundingBox.top + radiusPX]];
             holdingResize = undefined;
-            if (distanceBetween(topLeftResize, mousePosition) <= radiusPX + 5) { //calculate new distance between mouse position and bottom left, and resize based on that
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topLeft" };
-                oppositeCorner = [bottomRightResize[0] + radiusPX, bottomRightResize[1] + radiusPX];
+            if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, resizeElements.topLeftResizeElement) == true) {
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topLeft", oppositeCorner: [bottomRightResize[0] + radiusPX, bottomRightResize[1] + radiusPX] }; //calculate new distance between mouse position and bottom left, and resize based on that
             }
-            else if (distanceBetween(topRightResize, mousePosition) <= radiusPX + 5) {
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topRight" };
-                oppositeCorner = [bottomLeftResize[0] - radiusPX, bottomLeftResize[1] + radiusPX];
+            else if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, resizeElements.topRightResizeElement) == true) {
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "topRight", oppositeCorner: [bottomLeftResize[0] - radiusPX, bottomLeftResize[1] + radiusPX] };
             }
-            else if (distanceBetween(bottomLeftResize, mousePosition) <= radiusPX + 5) {
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomLeft" };
-                oppositeCorner = [topRightResize[0] + radiusPX, topRightResize[1] - radiusPX];
+            else if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, resizeElements.bottomLeftResizeElement) == true) {
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomLeft", oppositeCorner: [topRightResize[0] + radiusPX, topRightResize[1] - radiusPX] };
             }
-            else if (distanceBetween(bottomRightResize, mousePosition) <= radiusPX + 5) {
-                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomRight" };
-                oppositeCorner = [topLeftResize[0] - radiusPX, topLeftResize[1] - radiusPX];
+            else if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, resizeElements.bottomRightResizeElement) == true) {
+                holdingResize = { imageIndex: SELECTED_IMAGE_INDEX, corner: "bottomRight", oppositeCorner: [topLeftResize[0] - radiusPX, topLeftResize[1] - radiusPX] };
             }
         }
     };
@@ -73,6 +67,7 @@ const InitPaperListeners = (body, paper, rotateButton, bringForwardButton, delet
         }
         else { //there could be no selectedImage but still a holdingResize, because the user is not hovering over the image anymore
             const img = IMAGES[holdingResize.imageIndex];
+            const oppositeCorner = holdingResize.oppositeCorner;
             let [newWidthPX, newHeightPX] = [0, 0];
             if (holdingResize.corner == "topLeft") {
                 [newWidthPX, newHeightPX] = [oppositeCorner[0] - MOUSE_X, oppositeCorner[1] - MOUSE_Y];
