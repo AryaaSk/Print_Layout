@@ -1,17 +1,18 @@
-const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, bringForwardButton: HTMLInputElement, deleteButton: HTMLInputElement, duplicateButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
+const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, deleteButton: HTMLInputElement, duplicateButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
     let mouseDown = false;
     let [prevX, prevY] = [0, 0];
 
     let holdingResize: { imageIndex: number, corner: string, oppositeCorner: number[] /*[left, top]*/ } | undefined = undefined;
+    let pinching = false;
 
     body.onpointerdown = ($e) => {
         [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
-        if (holdingResize == undefined) {
-            SELECTED_IMAGE_INDEX = CheckForHover(paper, TRANSFORM_OVERLAY_RESIZE_RADIUS / 2); //dont select a new image if the user is just resizing the existing one
+        if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, taskbar) == true || pinching == true) {
+            return;
         }
 
-        if (CheckIntersectionElement(MOUSE_X, MOUSE_Y, taskbar) == true) {
-            return;
+        if (holdingResize == undefined && !(CheckIntersectionElement(MOUSE_X, MOUSE_Y, rotateButton) == true || CheckIntersectionElement(MOUSE_X, MOUSE_Y, deleteButton) == true || CheckIntersectionElement(MOUSE_X, MOUSE_Y, duplicateButton) == true)) {
+            SELECTED_IMAGE_INDEX = CheckForHover(paper, TRANSFORM_OVERLAY_RESIZE_RADIUS / 2); //dont select a new image if the user is just resizing the existing one
         }
 
         mouseDown = true;
@@ -46,7 +47,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
     body.onpointermove = ($e) => {
         [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
 
-        if (mouseDown == false) {
+        if (mouseDown == false || pinching == true) {
             return;
         }
 
@@ -112,6 +113,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         }
     }
 
+    //Zooming:
     if (isMobile == false) {
         body.onwheel = ($e) => {
             const damping = 1 / 400;
@@ -119,6 +121,25 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             ZOOM += zoomFactor;
             SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
         }
+    }
+    else {
+        let previousScale = 1;
+
+        body.addEventListener('gesturestart', () => {
+            pinching = true;
+        });
+
+        body.addEventListener('gesturechange', ($e: any) => {
+            const deltaScale = $e.scale - previousScale;
+            previousScale = $e.scale;
+            ZOOM *= 1 + deltaScale;
+            SizePaper(paper);
+        });
+
+        body.addEventListener('gestureend', () => {
+            pinching = false;
+            previousScale = 1;
+        });
     }
 
 
@@ -135,6 +156,8 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         UPDATE_CANVAS = true;
     }
 
+    //No need for bring forward button since it is very rare to place images on top of each other, and user can just duplicate the image if it is required
+    /*
     bringForwardButton.onclick = () => { //just shift the currently selected image to the left in the IMAGES array
         if (IMAGE_BUTTONS_DISABLED == true) {
             return;
@@ -146,6 +169,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         [IMAGES[SELECTED_IMAGE_INDEX!], IMAGES[SELECTED_IMAGE_INDEX! + 1]] = [IMAGES[SELECTED_IMAGE_INDEX! + 1], IMAGES[SELECTED_IMAGE_INDEX!]];
         UPDATE_CANVAS = true;
     }
+    */
 
     deleteButton.onclick = () => {
         if (IMAGE_BUTTONS_DISABLED == true) {
