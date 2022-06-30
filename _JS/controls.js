@@ -183,9 +183,11 @@ const InitPaperListeners = (body, paper, rotateButton, deleteButton, duplicateBu
         if (IMAGE_BUTTONS_DISABLED == true) {
             return;
         }
-        IMAGES.splice(SELECTED_IMAGE_INDEX, 1);
-        SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it has been deleted
-        UPDATE_CANVAS = true;
+        if (confirm("Are you sure you want to delete this image") == true || isMobile == true) { //for now not available on mobile, since I need to upload new code in Swift to recive alerts, confirms and prompts
+            IMAGES.splice(SELECTED_IMAGE_INDEX, 1);
+            SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it has been deleted
+            UPDATE_CANVAS = true;
+        }
     };
     duplicateButton.onclick = () => {
         if (IMAGE_BUTTONS_DISABLED == true) {
