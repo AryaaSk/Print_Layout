@@ -76,6 +76,7 @@
             <point key="canvasLocation" x="131.8840579710145" y="116.51785714285714"/>
         </scene>
     </scenes>
+    <color key="tintColor" red="0.0039215686274509803" green="0.12156862745098039" blue="0.20392156862745098" alpha="1" colorSpace="calibratedRGB"/>
     <resources>
         <image name="plus" catalog="system" width="128" height="113"/>
         <image name="printer" catalog="system" width="128" height="111"/>
