@@ -43,29 +43,6 @@ const FitToScreen = () => {
     ORIGINAL_ZOOM = ZOOM;
     UPDATE_CANVAS = true;
 };
-//IOS FUNCTIONS - DO NOT USE IN ACTUAL CODE
-function GetCanvasBase64Encoded() {
-    const paper = document.getElementById("paper");
-    const base64EncodedString = paper.toDataURL();
-    return base64EncodedString.slice(22, base64EncodedString.length);
-}
-function enlargeCanvas() {
-    const body = document.body;
-    const paper = document.getElementById("paper");
-    const previousZoom = ZOOM;
-    ZOOM = 4;
-    SizePaper(paper);
-    body.style.setProperty("pointer-events", "none");
-    return previousZoom;
-}
-;
-function revertCanvas(prevZoom) {
-    const body = document.body;
-    const paper = document.getElementById("paper");
-    ZOOM = prevZoom;
-    SizePaper(paper);
-    body.style.setProperty("pointer-events", "all");
-}
 const SizePaper = (paper) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
@@ -271,7 +248,7 @@ const CanvasLoop = (paper, canvas, transformOverlay, imageSize) => {
 const Main = () => {
     const [body, paper, taskbar] = [document.body, document.getElementById("paper"), document.getElementById("taskbar")];
     const [file, print] = [document.getElementById("addImage"), document.getElementById("printButton")];
-    const [canvas, transformOverlay, imageSize, rotateButton, deleteButton, duplicateButton] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("imageSize"), document.getElementById("rotateButton"), document.getElementById("delete"), document.getElementById("duplicate")];
+    const [canvas, transformOverlay, imageSize, rotateButton, deleteButton, duplicateButton, distortButton] = [paper.getContext('2d'), document.getElementById("transformOverlay"), document.getElementById("imageSize"), document.getElementById("rotate"), document.getElementById("delete"), document.getElementById("duplicate"), document.getElementById("distort")];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize"), document.getElementById("topRightResize"), document.getElementById("bottomLeftResize"), document.getElementById("bottomRightResize")];
     //IMAGES.push(NewImageObject("performanceTest.png", 1496, 1200)); //for testing
     body.style.setProperty("--resizeCounterRadius", `${TRANSFORM_OVERLAY_RESIZE_RADIUS}px`);
@@ -285,7 +262,7 @@ const Main = () => {
     };
     SizePaper(paper);
     PositionPaper(paper);
-    InitPaperListeners(body, paper, rotateButton, deleteButton, duplicateButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
+    InitPaperListeners(body, paper, rotateButton, deleteButton, duplicateButton, distortButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
     InitTaskbarListeners(body, file, print, paper);
     CanvasLoop(paper, canvas, transformOverlay, imageSize);
 };

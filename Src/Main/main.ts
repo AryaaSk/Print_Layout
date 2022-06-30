@@ -33,6 +33,7 @@ const InitHTML = (taskbar: HTMLElement) => {
         taskbar.style.display = "none";
     }
 }
+
 const FitToScreen = () => {
     //paper's size in mm should stay the same, however we can change the ZOOM, at regular scale the A4 paper will be
     const [paperHeightPX, paperWidthPX] = [PAPER_HEIGHT_MM * MM_PX_SF, PAPER_WIDTH_MM * MM_PX_SF];
@@ -44,32 +45,6 @@ const FitToScreen = () => {
     UPDATE_CANVAS = true;
 }
 
-//IOS FUNCTIONS - DO NOT USE IN ACTUAL CODE
-function GetCanvasBase64Encoded() { //for iOS, which is why it is using the global variables instead of taking them in as HTMLElements
-    const paper = <HTMLCanvasElement>document.getElementById("paper")!;
-
-    const base64EncodedString = paper.toDataURL();
-    return base64EncodedString.slice(22, base64EncodedString.length);
-}
-function enlargeCanvas() { //again made for iOS app, not to be used in normal web app
-    const body = document.body;
-    const paper = <HTMLCanvasElement>document.getElementById("paper")!;
-
-    const previousZoom = ZOOM;
-    ZOOM = 4;
-    SizePaper(paper);
-    body.style.setProperty("pointer-events", "none");
-    return previousZoom;
-};
-function revertCanvas(prevZoom: number) { //also made for iOS app
-    const body = document.body;
-    const paper = <HTMLCanvasElement>document.getElementById("paper")!;
-
-    ZOOM = prevZoom;
-    SizePaper(paper);
-    body.style.setProperty("pointer-events", "all");
-}
-
 const SizePaper = (paper: HTMLElement) => {
     paper.style.height = `${PAPER_HEIGHT_MM * MM_PX_SF * ZOOM}px`;
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
@@ -77,6 +52,7 @@ const SizePaper = (paper: HTMLElement) => {
     paper.setAttribute('width', String(PAPER_WIDTH_MM * MM_PX_SF * ZOOM));
     UPDATE_CANVAS = true;
 }
+
 const PositionPaper = (paper: HTMLElement) => {
     paper.style.left = `${PAPER_POSITION.left}px`;
     paper.style.top = `${PAPER_POSITION.top}px`;
@@ -319,7 +295,7 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
 const Main = () => {
     const [body, paper, taskbar] = [document.body, <HTMLCanvasElement>document.getElementById("paper")!, document.getElementById("taskbar")!];
     const [file, print] = [<HTMLInputElement>document.getElementById("addImage")!, <HTMLInputElement>document.getElementById("printButton")!]
-    const [canvas, transformOverlay, imageSize, rotateButton, deleteButton, duplicateButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, document.getElementById("imageSize")!, <HTMLInputElement>document.getElementById("rotateButton")!, <HTMLInputElement>document.getElementById("delete")!, <HTMLInputElement>document.getElementById("duplicate")!];
+    const [canvas, transformOverlay, imageSize, rotateButton, deleteButton, duplicateButton, distortButton] = [paper.getContext('2d')!, document.getElementById("transformOverlay")!, document.getElementById("imageSize")!, <HTMLInputElement>document.getElementById("rotate")!, <HTMLInputElement>document.getElementById("delete")!, <HTMLInputElement>document.getElementById("duplicate")!, <HTMLInputElement>document.getElementById("distort")!];
     const [topLeftResize, topRightResize, bottomLeftResize, bottomRightResize] = [document.getElementById("topLeftResize")!, document.getElementById("topRightResize")!, document.getElementById("bottomLeftResize")!, document.getElementById("bottomRightResize")!];
 
     //IMAGES.push(NewImageObject("/Assets/performanceTest.png", 1496, 1200)); //for testing
@@ -338,7 +314,7 @@ const Main = () => {
     SizePaper(paper);
     PositionPaper(paper);
 
-    InitPaperListeners(body, paper, rotateButton, deleteButton, duplicateButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
+    InitPaperListeners(body, paper, rotateButton, deleteButton, duplicateButton, distortButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
     InitTaskbarListeners(body, file, print, paper);
 
     CanvasLoop(paper, canvas, transformOverlay, imageSize);

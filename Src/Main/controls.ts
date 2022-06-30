@@ -1,9 +1,10 @@
-const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, deleteButton: HTMLInputElement, duplicateButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
+const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateButton: HTMLInputElement, deleteButton: HTMLInputElement, duplicateButton: HTMLInputElement, distortButton: HTMLInputElement, resizeElements: { topLeftResizeElement: HTMLElement, topRightResizeElement: HTMLElement, bottomLeftResizeElement: HTMLElement, bottomRightResizeElement: HTMLElement }, taskbar: HTMLElement) => {
     let mouseDown = false;
     let [prevX, prevY] = [0, 0];
 
     let holdingResize: { imageIndex: number, corner: string, oppositeCorner: number[] /*[left, top]*/ } | undefined = undefined;
     let pinching = false;
+    let distortMode = false;
 
     body.onpointerdown = ($e) => {
         [MOUSE_X, MOUSE_Y] = [$e.clientX, $e.clientY];
@@ -11,8 +12,25 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             return;
         }
 
-        if (holdingResize == undefined && !(CheckIntersectionElement(MOUSE_X, MOUSE_Y, rotateButton) == true || CheckIntersectionElement(MOUSE_X, MOUSE_Y, deleteButton) == true || CheckIntersectionElement(MOUSE_X, MOUSE_Y, duplicateButton) == true)) {
-            SELECTED_IMAGE_INDEX = CheckForHover(paper, TRANSFORM_OVERLAY_RESIZE_RADIUS / 2); //dont select a new image if the user is just resizing the existing one
+        if (holdingResize == undefined && !(CheckIntersectionElement(MOUSE_X, MOUSE_Y, rotateButton) == true || CheckIntersectionElement(MOUSE_X, MOUSE_Y, deleteButton) == true || CheckIntersectionElement(MOUSE_X, MOUSE_Y, duplicateButton) == true || CheckIntersectionElement(MOUSE_X, MOUSE_Y, distortButton) == true)) {
+            const margin = TRANSFORM_OVERLAY_RESIZE_RADIUS * DPI;
+            const newSelectedIndex = CheckForHover(paper, margin);
+
+            if (newSelectedIndex != SELECTED_IMAGE_INDEX) { //doesnt do anything if it is the same element
+                distortMode = false;
+                distortButton.style.backgroundColor = ""; //reset distort mode for next image
+
+                //dont select a new image if the user is just resizing the existing one
+                if (newSelectedIndex != undefined && SELECTED_IMAGE_INDEX == undefined) {
+                    SELECTED_IMAGE_INDEX = newSelectedIndex;
+                }
+                else if (newSelectedIndex == undefined && SELECTED_IMAGE_INDEX != undefined) {
+                    SELECTED_IMAGE_INDEX = undefined;
+                }
+                else if (newSelectedIndex != undefined && CheckIntersectionImage(MOUSE_X, MOUSE_Y, paper.getBoundingClientRect(), SELECTED_IMAGE_INDEX!, margin) == false) { //only change if the selected index is not being hovered over anymore                    
+                    SELECTED_IMAGE_INDEX = newSelectedIndex;
+                }
+            }
         }
 
         mouseDown = true;
@@ -87,26 +105,35 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             }
             const [newWidthMM, newHeightMM] = [newWidthPX / MM_PX_SF / ZOOM, newHeightPX / MM_PX_SF / ZOOM];
 
-            const heightSF = newHeightMM / img.heightMM;
-            const widthSF = newWidthMM / img.widthMM;
+            let heightSF = newHeightMM / img.heightMM;
+            let widthSF = newWidthMM / img.widthMM;
             const SF = (heightSF < widthSF) ? heightSF : widthSF;
+            if (distortMode == false) {
+                [heightSF, widthSF] = [SF, SF];
+            }
 
             let [widthDifferenceMM, heightDifferenceMM] = [0, 0];
             if (holdingResize.corner == "topLeft") {
-                [widthDifferenceMM, heightDifferenceMM] = [img.widthMM - (img.widthMM * SF), img.heightMM - (img.heightMM * SF)];
+                [widthDifferenceMM, heightDifferenceMM] = [img.widthMM - (img.widthMM * widthSF), img.heightMM - (img.heightMM * heightSF)];
             }
             else if (holdingResize.corner == "topRight") {
-                [widthDifferenceMM, heightDifferenceMM] = [0, img.heightMM - (img.heightMM * SF)];
+                [widthDifferenceMM, heightDifferenceMM] = [0, img.heightMM - (img.heightMM * heightSF)];
             }
             else if (holdingResize.corner == "bottomLeft") {
-                [widthDifferenceMM, heightDifferenceMM] = [img.widthMM - (img.widthMM * SF), 0];
+                [widthDifferenceMM, heightDifferenceMM] = [img.widthMM - (img.widthMM * widthSF), 0];
             }
             else if (holdingResize.corner == "bottomRight") {
                 [widthDifferenceMM, heightDifferenceMM] = [0, 0];
             }
 
-            img.heightMM *= SF;
-            img.widthMM *= SF;
+            if (distortMode == false) {
+                img.heightMM *= SF;
+                img.widthMM *= SF;
+            }
+            else {
+                img.heightMM *= heightSF;
+                img.widthMM *= widthSF;
+            }
             img.leftMM += widthDifferenceMM;
             img.topMM += heightDifferenceMM;
             UPDATE_CANVAS = true;
@@ -129,7 +156,6 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         body.addEventListener('gesturestart', () => {
             pinching = true;
         });
-
         body.addEventListener('gesturechange', ($e: any) => {
             const deltaScale = $e.scale - previousScale;
             previousScale = $e.scale;
@@ -137,7 +163,6 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             limitZoom();
             SizePaper(paper);
         });
-
         body.addEventListener('gestureend', () => {
             pinching = false;
             previousScale = 1;
@@ -205,6 +230,17 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
         UPDATE_CANVAS = true;
     }
 
+    distortButton.onclick = () => {
+        distortMode = !distortMode;
+        if (distortMode == true) {
+            //apply some styles to the distortButton to make it clear to the user that they are in distort mode
+            distortButton.style.backgroundColor = "#666666";
+        }
+        else {
+            distortButton.style.backgroundColor = ""; //remove styles from distortButton
+        }
+    }
+
     document.onpaste = ($e) => { //paste image: https://stackoverflow.com/questions/60503912/get-image-using-paste-from-the-browser
         const dT = $e.clipboardData!;
         const files = dT.files!;
@@ -216,7 +252,6 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
     paper.addEventListener('dragexit', ($e: any) => { $e.stopPropagation(); $e.preventDefault() }, false);
     paper.addEventListener('dragover', ($e: any) => { $e.stopPropagation(); $e.preventDefault() }, false);
     paper.addEventListener('drop', ($e) => {
-
         $e.stopPropagation();
         $e.preventDefault(); 
         var files = $e.dataTransfer!.files;

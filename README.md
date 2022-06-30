@@ -7,18 +7,6 @@ When printing an image to place somewhere, you usually want to be able to contro
 
 This utility will allow you to quickly import 1 or more photos, and view their layout and size on a sheet of A4 (or another sized) Paper, this helps you visualize how large the photo will actually be when you print it, and eliminates the need to take the image into a much larger image/document editing program. For example many people will take the image to Microsoft Word or Adobe Photoshop, just to do a simple crop or resize, which should not be needed just to print out an image.
 
-I am planning to add a mobile app, since it is even harder for a user to change an image's size there, however first I will create a website.\
-Here are a few links to handle the 'Open With' feature of iOS:
-- https://stackoverflow.com/questions/13106461/how-to-open-image-in-my-ios-app-from-another-app
-- https://medium.com/macoclock/ios-share-extension-swift-5-1-1606263746b
-- https://stackoverflow.com/questions/69926336/how-to-handle-a-file-shared-from-another-app-to-my-own-ios-app
-- https://stackoverflow.com/questions/49154366/how-to-handle-a-file-sent-with-open-in-from-another-app-to-my-own-ios-app
-*Unfortunately after trying a lot, I could not figure out how to open an image from the photos or safari app directly into this app, this would have been a very useful feature, but it seems like the only option is to make an embedded app inside a Share Extension. Even after making the app open from the files app, I was not able to use the URL to actually access the image*
-
-Here are a few links to load a UIImage into a Website with Webkit:
-- https://stackoverflow.com/questions/38743604/wkwebview-insert-uiimage-into-web-page
-- https://stackoverflow.com/questions/24049343/call-javascript-function-from-native-code-in-wkwebview
-
 ## Design
 I want this app to be very minimal and fast, so the design is meant to look very clean. For example I'll try to only keep a few buttons in sight, the pan and zoom will just be control by mouse/gesture and scroll/pinch for desktop/mobile. This also means that I should spend quite a lot of time adding small shortcuts, such as the ability to drag and drop, copy and paste images onto the paper. These are improvements which will make the app very easy to use.
 
@@ -63,6 +51,19 @@ When exporting the image, I have to make sure to increase the physical size of t
 
 ### Native App
 I also integrated the webpage into a native iOS app, by displaying a Webview, and then just executing JS commands from Swift (iOS's programming language), this was quite simple, however one challenge I faced was passing the image from the webpage to the local iOS device to be printed. To do this I had to convert the image into a Base64 encoded string, then I could just read the value from Swift, and then I had to decode the Base64 data into a UIImage, which I then printed.
+
+I also added a mobile app, since it is even harder for a user to change an image's size on mobile.\
+Here are a few links to handle the 'Open With' feature of iOS:
+- https://stackoverflow.com/questions/13106461/how-to-open-image-in-my-ios-app-from-another-app
+- https://medium.com/macoclock/ios-share-extension-swift-5-1-1606263746b
+- https://stackoverflow.com/questions/69926336/how-to-handle-a-file-shared-from-another-app-to-my-own-ios-app
+- https://stackoverflow.com/questions/49154366/how-to-handle-a-file-sent-with-open-in-from-another-app-to-my-own-ios-app
+
+Here are a few links to load a UIImage into a Website with Webkit:
+- https://stackoverflow.com/questions/38743604/wkwebview-insert-uiimage-into-web-page
+- https://stackoverflow.com/questions/24049343/call-javascript-function-from-native-code-in-wkwebview
+
+*Unfortunately after trying a lot, I could not figure out how to open an image from the photos or safari app directly into this app, this would have been a very useful feature, but it seems like the only option is to make an embedded app inside a Share Extension. Even after making the app open from the files app, I was not able to use the URL to actually access the image*
 
 ## Performance
 Since this app requires a lot of image rendering, performance is a large consideration. Here are the techniques I used to try and mitigate the performance issues:
