@@ -13,6 +13,7 @@ function enlargeCanvas() { //again made for iOS app, not to be used in normal we
     ZOOM = 4;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "none");
+    UPDATE_CANVAS = true;
     return previousZoom;
 };
 function revertCanvas(prevZoom: number) { //also made for iOS app
@@ -22,4 +23,5 @@ function revertCanvas(prevZoom: number) { //also made for iOS app
     ZOOM = prevZoom;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "all");
+    UPDATE_CANVAS = true;
 }

@@ -12,6 +12,7 @@ function enlargeCanvas() {
     ZOOM = 4;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "none");
+    UPDATE_CANVAS = true;
     return previousZoom;
 }
 ;
@@ -21,4 +22,5 @@ function revertCanvas(prevZoom) {
     ZOOM = prevZoom;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "all");
+    UPDATE_CANVAS = true;
 }

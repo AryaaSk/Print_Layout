@@ -148,6 +148,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             ZOOM += zoomFactor;
             limitZoom();
             SizePaper(paper); //should also change the paper's position, to make it seem like the user is actually zooming in on a point however it is quite tricky with this coordiante system
+            UPDATE_CANVAS = true;
         }
     }
     else {
@@ -162,6 +163,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             ZOOM *= 1 + deltaScale;
             limitZoom();
             SizePaper(paper);
+            UPDATE_CANVAS = true;
         });
         body.addEventListener('gestureend', () => {
             pinching = false;
@@ -192,20 +194,8 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
     }
 
     //No need for bring forward button since it is very rare to place images on top of each other, and user can just duplicate the image if it is required
-    /*
-    bringForwardButton.onclick = () => { //just shift the currently selected image to the left in the IMAGES array
-        if (IMAGE_BUTTONS_DISABLED == true) {
-            return;
-        }
 
-        if (SELECTED_IMAGE_INDEX == IMAGES.length - 1) {
-            return; //it is already at the front
-        }
-        [IMAGES[SELECTED_IMAGE_INDEX!], IMAGES[SELECTED_IMAGE_INDEX! + 1]] = [IMAGES[SELECTED_IMAGE_INDEX! + 1], IMAGES[SELECTED_IMAGE_INDEX!]];
-        UPDATE_CANVAS = true;
-    }
-    */
-
+    //FOR SOME REASON THE APP KEEPS CRASHING WHEN CLICKING THE DELETE BUTTON ON THE FIRST ITEM
     deleteButton.onclick = () => {
         if (IMAGE_BUTTONS_DISABLED == true) {
             return;
@@ -213,7 +203,10 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
 
         IMAGES.splice(SELECTED_IMAGE_INDEX!, 1);
         SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it has been deleted
+
+        SizePaper(paper); //CURRENTLY THIS SEEMS TO FIX THE PROBLEM, HOWEVER IT IS NOT THE CURRENT SOLUTION, PROBABLY THE BUFFER CANVAS IS GETTING STUCK SOMEWHERE AND I WILL RUN INTO ANOTHER ISSUE SOON
         UPDATE_CANVAS = true;
+
     }
 
     duplicateButton.onclick = () => { //not working perfectly, new image goes behind for some reason

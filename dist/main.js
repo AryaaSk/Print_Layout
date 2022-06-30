@@ -48,7 +48,6 @@ const SizePaper = (paper) => {
     paper.style.width = `${PAPER_WIDTH_MM * MM_PX_SF * ZOOM}px`;
     paper.setAttribute('height', String(PAPER_HEIGHT_MM * MM_PX_SF * ZOOM));
     paper.setAttribute('width', String(PAPER_WIDTH_MM * MM_PX_SF * ZOOM));
-    UPDATE_CANVAS = true;
 };
 const PositionPaper = (paper) => {
     paper.style.left = `${PAPER_POSITION.left}px`;
@@ -122,6 +121,7 @@ const PrintCanvas = (body, paper) => {
     ZOOM = 4;
     SizePaper(paper);
     body.style.setProperty("pointer-events", "none");
+    UPDATE_CANVAS = true;
     const isSafari = /^((?!chrome|android).)*safari/i.test(window.navigator.userAgent);
     if (isSafari == true && isMobile == true) {
         var windowReference = window.open(); //for iOS safari
@@ -152,6 +152,7 @@ const PrintCanvas = (body, paper) => {
         ZOOM = prevZoom;
         SizePaper(paper);
         body.style.setProperty("pointer-events", "all");
+        UPDATE_CANVAS = true;
     }, 3000);
 };
 const NewImageObject = (src, heightPX, widthPX, leftMM, topMM) => {
@@ -206,24 +207,6 @@ const CanvasLoop = (paper, canvas, transformOverlay, imageSize) => {
     const bufferPaper = document.createElement("canvas");
     const bufferCanvas = bufferPaper.getContext('2d'); //draw to this canvas, and once we have finished drawing we can draw to the main canvas, to avoid flickering
     setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
-        if (LOOP_COUNT == UPDATE_CANVAS_TICK) { //only redraw images every (UPDATE_CANVAS_TICK) ticks, but update other things at regular 60fps to keep UI smooth
-            //1 = every tick
-            //2 = every 2nd tick
-            //etc...
-            if (UPDATE_CANVAS == true) {
-                SizePaper(bufferPaper);
-                PositionPaper(bufferPaper);
-                yield DrawImages(bufferCanvas); //draw data to buffer canvas first
-                /* //Slower method
-                const bufferCanvasData = bufferCanvas.getImageData(0, 0, bufferPaper.width - 1, bufferPaper.height - 1);
-                canvas.putImageData(bufferCanvasData, 0, 0);
-                */
-                canvas.drawImage(bufferPaper, 0, 0); //copy buffer canvas contents onto actual paper
-                UPDATE_CANVAS = false;
-            }
-            LOOP_COUNT = 0;
-        }
-        LOOP_COUNT += 1;
         if (SELECTED_IMAGE_INDEX != undefined) { //display transform overlay over the image
             const img = IMAGES[SELECTED_IMAGE_INDEX];
             const paperBoundingBox = paper.getBoundingClientRect();
@@ -242,6 +225,14 @@ const CanvasLoop = (paper, canvas, transformOverlay, imageSize) => {
         else {
             transformOverlay.style.visibility = "hidden";
             IMAGE_BUTTONS_DISABLED = true;
+        }
+        if (UPDATE_CANVAS == true) {
+            SizePaper(bufferPaper);
+            PositionPaper(bufferPaper);
+            yield DrawImages(bufferCanvas); //draw data to buffer canvas first
+            //Slower method
+            canvas.drawImage(bufferPaper, 0, 0); //copy buffer canvas contents onto actual paper
+            UPDATE_CANVAS = false;
         }
     }), 16);
 };
@@ -262,6 +253,7 @@ const Main = () => {
     };
     SizePaper(paper);
     PositionPaper(paper);
+    UPDATE_CANVAS = true;
     InitPaperListeners(body, paper, rotateButton, deleteButton, duplicateButton, distortButton, { topLeftResizeElement: topLeftResize, topRightResizeElement: topRightResize, bottomLeftResizeElement: bottomLeftResize, bottomRightResizeElement: bottomRightResize }, taskbar);
     InitTaskbarListeners(body, file, print, paper);
     CanvasLoop(paper, canvas, transformOverlay, imageSize);
