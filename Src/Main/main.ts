@@ -215,6 +215,10 @@ const DrawImages = (canvas: CanvasRenderingContext2D) => { //Need to work on spe
         canvas.fillStyle = "white";
         canvas.fillRect(0, 0, canvasWidth, canvasHeight); //to make the background white
 
+        if (IMAGES.length == 0) {
+            resolve("Completed drawing images");
+        }
+
         let counter = 0;
         for (const imageObject of IMAGES) {
             const img = new Image();

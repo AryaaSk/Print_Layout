@@ -186,6 +186,9 @@ const DrawImages = (canvas) => {
         const [canvasHeight, canvasWidth] = [PAPER_HEIGHT_MM * MM_PX_SF * ZOOM, PAPER_WIDTH_MM * MM_PX_SF * ZOOM];
         canvas.fillStyle = "white";
         canvas.fillRect(0, 0, canvasWidth, canvasHeight); //to make the background white
+        if (IMAGES.length == 0) {
+            resolve("Completed drawing images");
+        }
         let counter = 0;
         for (const imageObject of IMAGES) {
             const img = new Image();
