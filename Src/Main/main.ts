@@ -247,6 +247,17 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
     const bufferCanvas = bufferPaper.getContext('2d')!; //draw to this canvas, and once we have finished drawing we can draw to the main canvas, to avoid flickering
 
     setInterval(async () => {
+        if (UPDATE_CANVAS == true) {
+            SizePaper(bufferPaper);
+            PositionPaper(bufferPaper);
+            await DrawImages(bufferCanvas); //draw data to buffer canvas first
+
+            //Slower method
+            canvas.drawImage(bufferPaper, 0, 0); //copy buffer canvas contents onto actual paper
+
+            UPDATE_CANVAS = false;
+        }
+
         if (SELECTED_IMAGE_INDEX != undefined) { //display transform overlay over the image
             const img = IMAGES[SELECTED_IMAGE_INDEX];
             const paperBoundingBox = paper.getBoundingClientRect();
@@ -268,17 +279,6 @@ const CanvasLoop = (paper: HTMLCanvasElement, canvas: CanvasRenderingContext2D, 
         else {
             transformOverlay.style.visibility = "hidden";
             IMAGE_BUTTONS_DISABLED = true;
-        }
-
-        if (UPDATE_CANVAS == true) {
-            SizePaper(bufferPaper);
-            PositionPaper(bufferPaper);
-            await DrawImages(bufferCanvas); //draw data to buffer canvas first
-
-            //Slower method
-            canvas.drawImage(bufferPaper, 0, 0); //copy buffer canvas contents onto actual paper
-
-            UPDATE_CANVAS = false;
         }
     }, 16);
 }
