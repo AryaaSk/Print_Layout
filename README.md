@@ -3,6 +3,8 @@
 
 ### URL: https://aryaask.github.io/Print_Layout/dist
 
+### iOS: https://apps.apple.com/us/app/print-layout/id1631719751
+
 When printing an image to place somewhere, you usually want to be able to control the size at which it will be printed. However unfortuantely most of the time when you select print on an image, you will be prompted with a screen which only allows you a few pre-defined sizes, however they are not very customizable. 
 
 This utility will allow you to quickly import 1 or more photos, and view their layout and size on a sheet of A4 (or another sized) Paper, this helps you visualize how large the photo will actually be when you print it, and eliminates the need to take the image into a much larger image/document editing program. For example many people will take the image to Microsoft Word or Adobe Photoshop, just to do a simple crop or resize, which should not be needed just to print out an image.
