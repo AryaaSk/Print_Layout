@@ -15,7 +15,7 @@ I want this app to be very minimal and fast, so the design is meant to look very
 Here is a preview on desktop:\
 ![Desktop Preview](Previews/DesktopPreview.png)
 
-And here are previews of the iOS app (not available yet):
+And here are previews of the iOS app:
 <p float="left"> 
   <img src="Previews/iOSPreview1.png?raw=true" width="350" />
   <img src="Previews/iOSPreview2.png?raw=true" width="350" /> 
