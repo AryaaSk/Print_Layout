@@ -50,9 +50,9 @@ Mobile controls are extremely similar, the only difference was that I had to use
 When exporting the image, I have to make sure to increase the physical size of the canvas, so that all its images are at their highest resolution, then I convert the canvas into a PDF document using jsPDF, and then I print it. When you print an image you can actually see this happening, it will zoom in for 3 secconds, just to make sure that all images have been fully drawn out, and then take the snapshot. This tries to make sure that the result PDF / Print Document is high quality, however there are still a few smaller quality issues.
 
 ### Native App
-I also integrated the webpage into a native iOS app, by displaying a Webview, and then just executing JS commands from Swift (iOS's programming language), this was quite simple, however one challenge I faced was passing the image from the webpage to the local iOS device to be printed. To do this I had to convert the image into a Base64 encoded string, then I could just read the value from Swift, and then I had to decode the Base64 data into a UIImage, which I then printed.
-
 I also added a mobile app, since it is even harder for a user to change an image's size on mobile.\
+I just integrated the webpage into the native iOS app, by displaying a Webview, and then just executing JS commands from Swift (iOS's programming language), this was quite simple, however one challenge I faced was passing the image from the webpage to the local iOS device to be printed. To do this I had to convert the image into a Base64 encoded string, then I could just read the value from Swift, and then I had to decode the Base64 data into a UIImage, which I then printed.
+
 Here are a few links to handle the 'Open With' feature of iOS:
 - https://stackoverflow.com/questions/13106461/how-to-open-image-in-my-ios-app-from-another-app
 - https://medium.com/macoclock/ios-share-extension-swift-5-1-1606263746b
