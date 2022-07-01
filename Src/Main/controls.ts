@@ -200,7 +200,7 @@ const InitPaperListeners = (body: HTMLElement, paper: HTMLCanvasElement, rotateB
             return;
         }
         
-        if (isMobile == true || confirm("Are you sure you want to delete this image") == true) { //for now not available on mobile, since I need to upload new code in Swift to recive alerts, confirms and prompts
+        if (confirm("Are you sure you want to delete this image") == true) {
             IMAGES.splice(SELECTED_IMAGE_INDEX!, 1);
             SELECTED_IMAGE_INDEX = undefined; //reset selected image, since it has been deleted
             UPDATE_CANVAS = true;
